@@ -4,76 +4,495 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Naveen | WebGL Builds</title>
-  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* Animated background particles */
+    .background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0a0a0a 100%);
+    }
+
+    .particles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #00d4ff;
+      border-radius: 50%;
+      animation: float 20s infinite linear;
+      opacity: 0.6;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(100vh) translateX(0px); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+    }
+
+    /* Header Section */
+    header {
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(22, 33, 62, 0.95));
+      backdrop-filter: blur(20px);
+      border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+      padding: 3rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, 
+        rgba(0, 212, 255, 0.05) 0%, 
+        rgba(148, 0, 211, 0.05) 50%, 
+        rgba(0, 212, 255, 0.05) 100%);
+      z-index: -1;
+    }
+
+    header h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #00d4ff, #9400d3, #00d4ff);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient-shift 3s ease-in-out infinite;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    header p {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: #00d4ff;
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff; }
+      to { text-shadow: 0 0 20px #00d4ff, 0 0 30px #00d4ff; }
+    }
+
+    /* Back Button */
+    .back-nav {
+      position: absolute;
+      top: 2rem;
+      left: 2rem;
+      z-index: 100;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: rgba(26, 26, 46, 0.8);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 25px;
+      color: #00d4ff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .back-btn:hover {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: rgba(0, 212, 255, 0.6);
+      transform: translateX(-5px);
+      box-shadow: 0 5px 15px rgba(0, 212, 255, 0.2);
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2.5rem;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: linear-gradient(145deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9));
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s ease;
+      backdrop-filter: blur(15px);
+      display: flex;
+      flex-direction: column;
+      min-height: 400px;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+      z-index: 1;
+    }
+
+    .card:hover::before {
+      left: 100%;
+    }
+
+    .card:hover {
+      transform: translateY(-10px) scale(1.02);
+      border-color: rgba(0, 212, 255, 0.6);
+      box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+    }
+
+    /* Image Container */
+    .thumb-container {
+      width: 100%;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .thumb-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, 
+        rgba(0, 212, 255, 0.05), 
+        rgba(148, 0, 211, 0.05));
+      z-index: 1;
+    }
+
+    .card:hover .thumb-container {
+      border-color: rgba(0, 212, 255, 0.4);
+      box-shadow: 0 10px 25px rgba(0, 212, 255, 0.15);
+    }
+
+    .thumb-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 10px;
+      position: relative;
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover .thumb-container img {
+      transform: scale(1.05);
+    }
+
+    /* Card Content */
+    .card h3 {
+      font-size: 1.4rem;
+      color: #ffffff;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      position: relative;
+      z-index: 2;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* Launch Button */
+    .btn {
+      display: inline-block;
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #00d4ff, #9400d3);
+      color: white;
+      text-decoration: none;
+      border-radius: 50px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+      z-index: 2;
+      margin-top: auto;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #9400d3, #00d4ff);
+      transition: left 0.3s ease;
+      z-index: -1;
+    }
+
+    .btn:hover::before {
+      left: 0;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5);
+    }
+
+    /* Footer */
+    footer {
+      background: rgba(10, 10, 10, 0.95);
+      border-top: 1px solid rgba(0, 212, 255, 0.2);
+      padding: 2rem;
+      text-align: center;
+      margin-top: 4rem;
+    }
+
+    footer p {
+      color: #b8c5d1;
+      font-size: 1rem;
+    }
+
+    /* Loading Animation for Cards */
+    .card {
+      animation: cardSlideIn 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateY(50px);
+    }
+
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(4) { animation-delay: 0.4s; }
+    .card:nth-child(5) { animation-delay: 0.5s; }
+    .card:nth-child(6) { animation-delay: 0.6s; }
+
+    @keyframes cardSlideIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      header {
+        padding: 2rem 1rem;
+      }
+      
+      .back-nav {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 1rem;
+      }
+      
+      .container {
+        padding: 2rem 1rem;
+      }
+      
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      
+      .card {
+        min-height: 350px;
+        padding: 1.5rem;
+      }
+      
+      .thumb-container {
+        height: 160px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        min-height: 320px;
+      }
+      
+      .thumb-container {
+        height: 140px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <!-- Animated Background -->
+  <div class="background">
+    <div class="particles" id="particles"></div>
+  </div>
 
+  <!-- Back Navigation -->
+  <nav class="back-nav">
+    <a href="../index.html" class="back-btn">
+      ← Back to Home
+    </a>
+  </nav>
+
+  <!-- Header -->
   <header>
     <h1>My WebGL Simulations</h1>
     <p>Interactive Unity projects – Directly in your browser</p>
   </header>
 
-  <section class="grid">
-
-    <!-- FirstAid -->
-    <div class="card">
-      <div class="thumb-container">
-        <img src="./icons/firstaid.png" alt="FirstAid Simulation">
+  <!-- Main Content -->
+  <main class="container">
+    <section class="grid">
+      <!-- FirstAid -->
+      <div class="card">
+        <div class="thumb-container">
+          <img src="./icons/firstaid.png" alt="FirstAid Simulation">
+        </div>
+        <h3>FirstAid - CPR Training</h3>
+        <a href="./WebGLBuilds/FirstAid/index.html" class="btn" target="_blank">Launch App</a>
       </div>
-      <h3>FirstAid - CPR Training</h3>
-      <a href="./WebGLBuilds/FirstAid/index.html" class="btn" target="_blank">Launch App</a>
-    </div>
 
-    <!-- Travel & Tourism -->
-    <div class="card">
-      <div class="thumb-container">
-        <img src="./icons/travel.png" alt="Travel & Tourism Simulation">
+      <!-- Travel & Tourism -->
+      <div class="card">
+        <div class="thumb-container">
+          <img src="./icons/travel.png" alt="Travel & Tourism Simulation">
+        </div>
+        <h3>Travel & Tourism</h3>
+        <a href="./WebGLBuilds/Travel&Tourism/index.html" class="btn" target="_blank">Launch App</a>
       </div>
-      <h3>Travel & Tourism</h3>
-      <a href="./WebGLBuilds/Travel&Tourism/index.html" class="btn" target="_blank">Launch App</a>
-    </div>
 
-    <!-- Plumbing -->
-    <div class="card">
-      <div class="thumb-container">
-        <img src="./icons/plumbing.png" alt="Plumbing Simulation">
+      <!-- Plumbing -->
+      <div class="card">
+        <div class="thumb-container">
+          <img src="./icons/plumbing.png" alt="Plumbing Simulation">
+        </div>
+        <h3>Plumbing</h3>
+        <a href="./WebGLBuilds/Plumbing/index.html" class="btn" target="_blank">Launch App</a>
       </div>
-      <h3>Plumbing</h3>
-      <a href="./WebGLBuilds/Plumbing/index.html" class="btn" target="_blank">Launch App</a>
-    </div>
 
-    <!-- Fusion Splicing -->
-    <div class="card">
-      <div class="thumb-container">
-        <img src="./icons/splicing.png" alt="Fusion Splicing Simulation">
+      <!-- Fusion Splicing -->
+      <div class="card">
+        <div class="thumb-container">
+          <img src="./icons/splicing.png" alt="Fusion Splicing Simulation">
+        </div>
+        <h3>Fusion Splicing</h3>
+        <a href="./WebGLBuilds/FusionSplicing/index.html" class="btn" target="_blank">Launch App</a>
       </div>
-      <h3>Fusion Splicing</h3>
-      <a href="./WebGLBuilds/FusionSplicing/index.html" class="btn" target="_blank">Launch App</a>
-    </div>
 
-    <!-- EV Two Wheeler - Motor Repair -->
-    <div class="card">
-      <div class="thumb-container">
-        <img src="./icons/evrepair.png" alt="EV Two Wheeler Motor Repair Simulation">
+      <!-- EV Two Wheeler - Motor Repair -->
+      <div class="card">
+        <div class="thumb-container">
+          <img src="./icons/evrepair.png" alt="EV Two Wheeler Motor Repair Simulation">
+        </div>
+        <h3>EV Two Wheeler - Motor Repair</h3>
+        <a href="./WebGLBuilds/EV_TwoWheeler_MotorRepair/index.html" class="btn" target="_blank">Launch App</a>
       </div>
-      <h3>EV Two Wheeler - Motor Repair</h3>
-      <a href="./WebGLBuilds/EV_TwoWheeler_MotorRepair/index.html" class="btn" target="_blank">Launch App</a>
-    </div>
 
-    <!-- PLC Simulator -->
-    <div class="card">
-      <div class="thumb-container">
-        <img src="./icons/plc.png" alt="PLC Simulator">
+      <!-- PLC Simulator -->
+      <div class="card">
+        <div class="thumb-container">
+          <img src="./icons/plc.png" alt="PLC Simulator">
+        </div>
+        <h3>PLC Simulator</h3>
+        <a href="./WebGLBuilds/PLC/index.html" class="btn" target="_blank">Launch App</a>
       </div>
-      <h3>PLC Simulator</h3>
-      <a href="./WebGLBuilds/PLC/index.html" class="btn" target="_blank">Launch App</a>
-    </div>
+    </section>
+  </main>
 
-  </section>
-
+  <!-- Footer -->
   <footer>
     <p>© 2025 Naveen Kumar | Unity Developer</p>
   </footer>
 
+  <script>
+    // Create floating particles
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 30; // Fewer particles for better performance on this page
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 20 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+        particlesContainer.appendChild(particle);
+      }
+    }
+
+    // Initialize particles when page loads
+    document.addEventListener('DOMContentLoaded', createParticles);
+
+    // Add hover sound effect (optional)
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        // Optional: Add subtle hover sound or additional effects
+      });
+    });
+
+    // Smooth scroll to top when back button is clicked
+    document.querySelector('.back-btn').addEventListener('click', function(e) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
 </body>
 </html>
