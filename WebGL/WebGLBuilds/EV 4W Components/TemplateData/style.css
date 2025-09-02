@@ -24,38 +24,39 @@ html, body {
     border-radius: 12px;
 }
 
+/* FIXED: Unity Loading Bar Container */
 #unity-loading-bar {
     position: absolute;
     top: 50%;
-    left: 0;
-    right: 0;
-    transform: translateY(-50%);
+    left: 50%; /* Changed from 0 to 50% */
+    transform: translate(-50%, -50%); /* Center both horizontally and vertically */
     display: flex;
-    justify-items: center;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     z-index: 10;
-    width: 100%;
-   // padding: 50px; /* This ensures content respects the margins */
+    width: auto; /* Changed from 50% to auto */
+    max-width: 90%; /* Prevent overflow on small screens */
     box-sizing: border-box;
 }
 
+/* FIXED: Unity Logo */
 #unity-logo {
-    width: 20vw; /* Responsive width based on viewport width */
-    max-width: 200px; /* Maximum size */
-    min-width: 100px; /* Minimum size */
-    height: auto; /* Maintain aspect ratio */
+    width: 20vw;
+    max-width: 100px;
+    min-width: 80px; /* Reduced minimum for better mobile fit */
+    height: auto;
     background: url('unity-logo-dark.png') no-repeat center;
     background-size: contain;
-    align-items: center;
-    margin-bottom: 5vh; /* Responsive margin */
-    aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+    margin: 0 auto 5vh auto; /* Added proper centering margin */
+    aspect-ratio: 1 / 1;
+    display: block; /* Ensure it's a block element for proper centering */
 }
 
 #unity-progress-bar-empty {
-    width: 80%; /* Use percentage instead of fixed width */
-    max-width: 500px; /* Maximum width */
-    min-width: 250px; /* Minimum width for small screens */
+    width: 80%;
+    max-width: 500px;
+    min-width: 250px;
     height: 20px;
     background-color: #ddd;
     border-radius: 20px;
@@ -131,11 +132,11 @@ html, body {
     font-weight: 500;
 }
 
+/* Portrait mode handling */
 @media screen and (orientation: portrait) {
     .portrait-warning {
         display: flex;
     }
-
     #unity-container {
         transform: translate(-50%, -50%) rotate(-90deg);
         transform-origin: center;
@@ -147,19 +148,37 @@ html, body {
     }
 }
 
+/* Mobile landscape specific optimizations */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    #unity-logo {
+        width: 15vw;
+        max-width: 80px;
+        min-width: 60px;
+        margin-bottom: 3vh; /* Reduced margin for landscape */
+    }
+    
+    #unity-progress-bar-empty {
+        min-width: 200px; /* Smaller minimum for landscape */
+    }
+}
+
+/* Larger screens optimization */
 @media (min-width: 480px) {
     #unity-loading-bar {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        margin: 0 auto; /* This centers the bar horizontally */
-        //transform: translateY(-50%);
-        display: flex;
-        justify-items: center;
-        flex-direction: column;
-        align-items: center;
-
+        max-width: 600px; /* Limit maximum width on larger screens */
     }
-     
+}
+
+/* Very small mobile devices */
+@media (max-width: 480px) {
+    #unity-logo {
+        width: 25vw;
+        max-width: 80px;
+        min-width: 60px;
+    }
+    
+    #unity-progress-bar-empty {
+        min-width: 200px;
+        width: 90%;
+    }
 }
