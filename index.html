@@ -196,6 +196,77 @@
       color: #b8c5d1;
     }
 
+    /* New sections styling */
+    .experience-highlight, .technical-expertise {
+      margin: 3rem 0;
+      padding: 2.5rem;
+      background: rgba(0, 212, 255, 0.05);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 15px;
+      backdrop-filter: blur(5px);
+    }
+
+    .experience-highlight h3, .technical-expertise h3 {
+      color: #00d4ff;
+      font-size: 1.6rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .client-projects {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .project-item {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1.2rem;
+      border-radius: 8px;
+      border-left: 4px solid #00d4ff;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #e0e6ed;
+    }
+
+    .project-item strong {
+      color: #00d4ff;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .tech-category {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .tech-category:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .tech-category h4 {
+      color: #9400d3;
+      font-size: 1.1rem;
+      margin-bottom: 0.8rem;
+      font-weight: 600;
+    }
+
+    .tech-category span {
+      color: #b8c5d1;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
     /* Options Section */
     .options {
       padding: 4rem 2rem;
@@ -466,39 +537,95 @@
     
     <div class="intro-text">
       <p>Hi, I'm <span class="highlight">Naveen Kumar S 👋</span> — Senior Unity Developer</p>
-      <p>I help businesses and individuals create immersive VR/AR experiences, WebGL simulations, and mobile applications using Unity. With <span class="highlight">5+ years of hands-on experience</span>, I specialize in:</p>
+      <p>I specialize in creating immersive Unity experiences including VR/AR training simulations, architectural visualization, digital twins, and interactive applications. With <span class="highlight">5+ years of hands-on Unity development experience</span> and engineering background, I deliver high-quality, performance-optimized solutions across multiple platforms.</p>
       
       <div class="specialties">
         <div class="specialty-item">
           <div class="icon">🕹️</div>
-          <h4>Custom XR Training Simulations</h4>
-          <p>Safety training, medical simulations (CPR, welding, confined space, industrial tasks)</p>
+          <h4>VR/AR Training Simulations</h4>
+          <p>Advanced XR training for safety protocols, medical procedures, industrial tasks, and psychometric assessments with real-time performance tracking</p>
+        </div>
+        
+        <div class="specialty-item">
+          <div class="icon">🏗️</div>
+          <h4>Architectural Visualization</h4>
+          <p>Interactive 3D architectural walkthroughs, real-time lighting systems, interior design visualization, and immersive property showcasing</p>
+        </div>
+        
+        <div class="specialty-item">
+          <div class="icon">🔧</div>
+          <h4>Digital Twins & Simulations</h4>
+          <p>Real-time digital replicas of physical systems, industrial process simulations, and interactive technical documentation</p>
         </div>
         
         <div class="specialty-item">
           <div class="icon">🌐</div>
           <h4>WebGL Applications</h4>
-          <p>Interactive browser-based learning tools, product demos, and simulations</p>
+          <p>Browser-based Unity applications, e-learning modules which are developed for PSSCIVE and uploaded in DIKSHA platform, and interactive educational content</p>
         </div>
         
         <div class="specialty-item">
-          <div class="icon">📱</div>
-          <h4>Mobile & Utility Apps</h4>
-          <p>Performance-optimized apps for Android, VR headsets, and enterprise use</p>
+          <div class="icon">💻</div>
+          <h4>Desktop & Mobile Apps</h4>
+          <p>Cross-platform Unity applications for Windows, Android, performance-optimized solutions, and multiplayer experiences</p>
         </div>
         
         <div class="specialty-item">
           <div class="icon">⚡</div>
           <h4>Performance Optimization</h4>
-          <p>Improving load times, reducing draw calls, ensuring smooth experiences across devices</p>
+          <p>Advanced Unity optimization, draw call reduction, memory management, and seamless cross-platform deployment</p>
         </div>
       </div>
       
-      <p>I've successfully delivered end-to-end Unity projects for industries including <span class="highlight">education, healthcare, manufacturing, and defense</span>. My work ranges from VR safety training for L&T and NTPC, to aircraft component identification for Mirage 2000, to custom WebGL educational tools.</p>
+      <div class="experience-highlight">
+        <h3>Notable Projects & Clients</h3>
+        <div class="client-projects">
+          <div class="project-item">
+            <strong>🏢 NTPC & L&T:</strong> Comprehensive VR safety training simulators including welding safety modules, psychometric assessment systems, and electrical training with real-time scoring and performance analytics.
+          </div>
+          <div class="project-item">
+            <strong>⚓ Indian Navy & Cochin Shipyard:</strong> Advanced maritime training solutions including confined space simulators, ship visualization systems, and immersive vessel exploration applications.
+          </div>
+          <div class="project-item">
+            <strong>✈️ IDEX Defense:</strong> Mirage 2000 aircraft component identification and maintenance training using Hurricane VR physics, multiplayer collaboration with Netcode for GameObjects.
+          </div>
+          <div class="project-item">
+            <strong>🏥 Healthcare Training:</strong> Interactive CPR training with realistic biomechanical feedback, chest compression mechanics, and medical accuracy compliance systems.
+          </div>
+          <div class="project-item">
+            <strong>📚 E-Learning (PSSCIVE/DIKSHA):</strong> Educational WebGL applications for technical training, interactive learning modules, fusion splicing simulations, and solar energy education content.
+          </div>
+          <div class="project-item">
+            <strong>🏗️ Architectural Solutions:</strong> Real-time architectural walkthroughs, interior design visualization, and immersive property showcasing with advanced lighting and materials.
+          </div>
+        </div>
+      </div>
       
-      <p>I combine strong programming skills (C#, shaders, XR frameworks) with design expertise (Blender, VFX, lighting systems) to ensure projects are not only functional but also <span class="highlight">engaging and visually impressive</span>.</p>
+      <div class="technical-expertise">
+        <h3>Unity Technical Stack</h3>
+        <div class="tech-grid">
+          <div class="tech-category">
+            <h4>Unity Development</h4>
+            <span>Unity Engine, C#, Shader Graph, VFX Graph, XR Interaction Toolkit, Hurricane VR, Netcode for GameObjects, Unity Analytics</span>
+          </div>
+          <div class="tech-category">
+            <h4>Platform Deployment</h4>
+            <span>WebGL, Windows PC, Meta Quest (2, Pro, 3), HTC Vive, Microsoft HoloLens 2, Android, Cross-platform optimization</span>
+          </div>
+          <div class="tech-category">
+            <h4>3D Content Creation</h4>
+            <span>Blender, Rhino 3D, AutoCAD, SolidWorks, Pixyz Studio, V-Ray, KeyShot, Advanced lighting systems, PBR workflows</span>
+          </div>
+          <div class="tech-category">
+            <h4>Integration & Analytics</h4>
+            <span>Dashboard integration, Git version control, Performance profiling, Custom analytics, Team leadership, Quality assurance</span>
+          </div>
+        </div>
+      </div>
       
-      <p><span class="highlight">👉 If you need a Unity expert to bring your ideas to life—from concept to deployment—I can help you build it.</span></p>
+      <p>I focus exclusively on <span class="highlight">Unity-based solutions</span>, delivering everything from enterprise VR training platforms to educational WebGL content and architectural visualization systems. My approach combines technical precision with creative innovation to ensure projects are both functionally robust and visually compelling.</p>
+      
+      <p><span class="highlight">👉 Whether you need immersive VR training, architectural visualization, digital twin development, or interactive e-learning content — I deliver complete Unity solutions from concept to deployment across all major platforms.</span></p>
     </div>
   </header>
 
