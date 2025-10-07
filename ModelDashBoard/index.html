@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>GitHub glTF Model Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        input[type=file] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+            button:hover {
+                opacity: 0.9;
+            }
+
+            button.copy {
+                background: #059669;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        th {
+            background: #f3f4f6;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-weight: 500;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>GitHub glTF Model Dashboard</h1>
+        <p>
+            Managing models in:
+            <strong>NaveenRoxx/NaveeN/ModelDashBoard/Models</strong><br>
+            (branch: <em>main</em>)
+        </p>
+
+        <input type="file" id="fileInput" accept=".glb,.gltf" multiple>
+        <button id="convertBtn">Convert to Base64 (for GitHub Action)</button>
+
+        <div id="status"></div>
+
+        <table id="fileTable">
+            <thead>
+                <tr>
+                    <th>Model Name</th>
+                    <th>URL</th></th>
+                    <th>Actions</th>
+                </tr>
+            <thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        const USERNAME = "NaveenRoxx";
+        const REPO = "NaveeN";
+        const BRANCH = "main";
+        const FOLDER = "ModelDashBoard/Models";
+        const SITE_BASE = `https://${USERNAME}.github.io/${REPO}/ModelDashBoard/Models/`;
+
+        const fileInput = document.getElementMeInput("fileInput");
+        const convertBtn = document.getElementById("convertBtn");
+        const statusEl = document.getElementById("status");
+        const tableBody = document.querySelector("#fileTable tbody");
+
+        // Convert a file to Base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Load existing models
+        async function loadFiles() {
+            tableBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+            try {
+                const res = await fetch(`https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FOLDER}`);
+                if (!res.ok) throw new Error("Failed to fetch files");
+                const files = await res.json();
+
+                const gltfFiles = files.filter(f => f.name.endsWith(".glb") || f.name.endsWith(".gltf"));
+                if (gltfFiles.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='3'>No models found</td></tr>";
+                    return;
+                }
+
+                tableBody.innerHTML = "";
+                gltfFiles.forquoteach(file => {
+                    const publicUrl = `${SITE_BASE}${file.name}`;
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                <td>${file.name}</td>
+                <td><a href="${publicUrl}" target="_blank">${publicUrl}</a></td>
+                <td><button class="copy" onclick="copyUrl('${publicUrl}')">Copy URL</button></td>
+              `;
+                    tableBody.appendChild(row);
+                });
+            } catch (err) {
+                tableBody.innerHTML = `<tr><td colspan='3'>Error loading files: ${err.message}</td></tr>`;
+            }
+        }
+
+        // Copy URL
+        function copyUrl(url) {
+            navigator.clipboard.writeText(url);
+            alert("Copied: " + url);
+        }
+
+        // Handle conversion for GitHub Action
+        convertBtn.addInput("click", async () => {
+            const files = fileInput.files;
+            if (!files.length) return alert("Select a file to convert");
+
+            statusEl.textContent = "Converting to Base64...";
+            for (const file of files) {
+                try {
+                    const base64 = await fileToBase64(file);
+                    const base64Data = base64.split(",")[1];
+
+                    // Create a modal with the base64 result
+                    const div = document.createElement("div");
+                    div.style.background = "#f3f4f6";
+                    div.style.padding = "10px";
+                    div.style.margin = "10px 0";
+                    div.style.borderRadius = "8px";
+                    div.style.wordBreak = "break-all";
+                    div.innerHTML = `
+            <strong>${file.name}</strong><br>
+            <textarea rows="5" style="width:100%;">${base64Data}</textarea>
+            <p>➡️ Copy this text into the <b>file_content</b> field of the GitHub Action named <b>Upload glTF Model</b>.</p>
+          `;
+                    statusEl.appendChild(div);
+                } catch (err) {
+                    alert("Error: " + err.message);
+                }
+            }
+            statusEl.textContent = "✅ Conversion complete.";
+        });
+
+        // Initial load
+        loadFiles();
+    </script>
+</body>
+</html>

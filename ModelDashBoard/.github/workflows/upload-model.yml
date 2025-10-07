@@ -1,0 +1,32 @@
+name: Upload glTF Model
+on:
+  workflow_dispatch:
+    inputs:
+      file_name:
+        description: 'Name of the model file (.glb/.gltf)'
+        required: true
+      file_content:
+        description: 'Base64-encoded model data'
+        required: true
+
+jobs:
+  upload:
+    runs: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Decode & Save file
+        run: |
+          mkdir -p ModelDashBoard/Models
+          echo "${{ github.event.inputs.file_content }}" | base64 --decode > "ModelDashBoard/Models/${{ github.event.inputs.file_name }}"
+
+      - name: Commit & Push
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Action"
+          git add ModelDashBoard/Models/
+          git commit -m "Add model: ${{ github.event.inputs.file_name }}" || echo "No changes to commit"
+          git push
