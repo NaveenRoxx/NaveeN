@@ -42,6 +42,63 @@
             margin-bottom: 30px;
         }
 
+        .config-section {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+            .config-section label {
+                display: block;
+                color: #4a5568;
+                font-weight: 600;
+                margin-bottom: 8px;
+                font-size: 14px;
+            }
+
+            .config-section input {
+                width: 100%;
+                padding: 10px;
+                border: 2px solid #cbd5e0;
+                border-radius: 6px;
+                font-size: 14px;
+                font-family: 'Courier New', monospace;
+            }
+
+                .config-section input:focus {
+                    outline: none;
+                    border-color: #667eea;
+                }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #cbd5e0;
+        }
+
+            .status-indicator.connected {
+                background: #48bb78;
+                box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+            }
+
+            .status-indicator.disconnected {
+                background: #f56565;
+            }
+
         .upload-section {
             display: flex;
             gap: 15px;
@@ -71,6 +128,19 @@
                 border-color: #667eea;
                 background: #ebf4ff;
             }
+
+            .upload-area.disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                background: #e2e8f0;
+                border-color: #cbd5e0;
+                pointer-events: none;
+            }
+
+                .upload-area.disabled:hover {
+                    border-color: #cbd5e0;
+                    background: #e2e8f0;
+                }
 
         input[type="file"] {
             display: none;
@@ -145,7 +215,8 @@
             height: 100%;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             width: 0%;
-            transition: width 0.3s;
+            transition: width 0.3s ease-out;
+            border-radius: 4px;
         }
 
         .progress-text {
@@ -153,6 +224,7 @@
             color: #718096;
             margin-top: 8px;
             text-align: center;
+            font-weight: 500;
         }
 
         .status {
@@ -263,6 +335,16 @@
                 opacity: 0.5;
             }
 
+        .info-badge {
+            display: inline-block;
+            background: #ebf4ff;
+            color: #2c5282;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
         @media (max-width: 768px) {
             .models-grid {
                 grid-template-columns: 1fr;
@@ -281,8 +363,18 @@
 <body>
     <div class="container">
         <div class="card">
-            <h1>Model Upload Dashboard</h1>
+            <h1>Model Upload Dashboard <span class="info-badge" id="networkInfo">Network Mode</span></h1>
             <p class="subtitle">Upload and manage your 3D models for AR visualization</p>
+
+            <!-- Server Configuration -->
+            <div class="config-section">
+                <label for="serverIP">Server IP Address:</label>
+                <input type="text" id="serverIP" placeholder="e.g., 192.168.1.9 or localhost" value="localhost">
+                <div class="server-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="connectionStatus">Not connected</span>
+                </div>
+            </div>
 
             <div class="upload-section">
                 <div class="upload-area" id="uploadArea">
@@ -316,11 +408,81 @@
     </div>
 
     <script>
-        const API_URL = "http://localhost:3000";
+        let API_URL = "http://localhost:3000";
         let isUploading = false;
 
-        // Load models on page load
-        window.addEventListener('DOMContentLoaded', loadModels);
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadServerConfig();
+            checkServerConnection();
+            loadModels();
+        });
+
+        // Server IP input handler
+        const serverIPInput = document.getElementById("serverIP");
+        serverIPInput.addEventListener('change', () => {
+            saveServerConfig();
+            checkServerConnection();
+        });
+
+        serverIPInput.addEventListener('blur', () => {
+            saveServerConfig();
+            checkServerConnection();
+        });
+
+        function saveServerConfig() {
+            const ip = serverIPInput.value.trim();
+            const serverConfig = { serverIP: ip };
+            console.log('Server config saved:', serverConfig);
+            API_URL = `http://${ip}:3000`;
+            console.log(`Server URL updated to: ${API_URL}`);
+            updateNetworkInfo(ip);
+        }
+
+        function loadServerConfig() {
+            const savedIP = "localhost";
+            if (savedIP) {
+                serverIPInput.value = savedIP;
+                API_URL = `http://${savedIP}:3000`;
+                updateNetworkInfo(savedIP);
+            }
+        }
+
+        function updateNetworkInfo(ip) {
+            const badge = document.getElementById('networkInfo');
+            if (ip === 'localhost' || ip === '127.0.0.1') {
+                badge.textContent = 'Local Mode';
+            } else {
+                badge.textContent = 'Network Mode';
+            }
+        }
+
+        async function checkServerConnection() {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('connectionStatus');
+
+            try {
+                const res = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(3000)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    indicator.classList.add('connected');
+                    indicator.classList.remove('disconnected');
+                    statusText.textContent = `Connected to ${API_URL} (${data.modelsCount} models)`;
+                    statusText.style.color = '#22543d';
+                    return true;
+                }
+            } catch (err) {
+                indicator.classList.add('disconnected');
+                indicator.classList.remove('connected');
+                statusText.textContent = `Cannot connect to ${API_URL}`;
+                statusText.style.color = '#742a2a';
+                return false;
+            }
+        }
 
         // Upload area handlers
         const uploadArea = document.getElementById("uploadArea");
@@ -340,32 +502,32 @@
         uploadArea.addEventListener("drop", (e) => {
             e.preventDefault();
             uploadArea.classList.remove("dragover");
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                uploadModel();
+            if (!isUploading) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
             }
         });
 
-        fileInput.addEventListener("change", uploadModel);
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                handleFileSelect(fileInput.files[0]);
+            }
+        });
+
+        // Reset file input after upload completes
+        function resetFileInput() {
+            uploadArea.classList.remove("disabled");
+        }
 
         // Refresh button handler
         document.getElementById("refreshBtn").addEventListener("click", () => {
+            checkServerConnection();
             loadModels(true);
         });
 
-        async function uploadModel() {
-            if (isUploading) {
-                showStatus("Upload already in progress", "error");
-                return;
-            }
-
-            const file = fileInput.files[0];
-
-            if (!file) {
-                return;
-            }
-
+        function handleFileSelect(file) {
             if (!file.name.endsWith('.glb') && !file.name.endsWith('.gltf')) {
                 showStatus("Please select a valid GLB or GLTF file", "error");
                 fileInput.value = "";
@@ -378,9 +540,31 @@
                 return;
             }
 
+            uploadModel(file);
+            fileInput.value = "";
+        }
+
+        async function uploadModel(file) {
+            if (isUploading) {
+                showStatus("Upload already in progress", "error");
+                return;
+            }
+
+            if (!file) {
+                return;
+            }
+
+            // Check connection before uploading
+            const isConnected = await checkServerConnection();
+            if (!isConnected) {
+                showStatus("Cannot connect to server. Check IP address and ensure server is running.", "error");
+                return;
+            }
+
             isUploading = true;
             showProgress(true);
             showStatus(`Uploading ${file.name}...`, "loading");
+            uploadArea.classList.add("disabled");
 
             const formData = new FormData();
             formData.append("file", file);
@@ -388,46 +572,70 @@
             try {
                 const xhr = new XMLHttpRequest();
 
-                // Track upload progress
+                // Track upload progress with accurate calculation
                 xhr.upload.addEventListener("progress", (e) => {
                     if (e.lengthComputable) {
+                        // Calculate percentage based on actual bytes uploaded vs total
                         const percentComplete = (e.loaded / e.total) * 100;
-                        updateProgress(percentComplete);
+                        const remainingBytes = e.total - e.loaded;
+                        updateProgress(percentComplete, `${formatBytes(e.loaded)} / ${formatBytes(e.total)}`);
                     }
                 });
 
-                // Handle completion
+                // Upload finished, now processing on server
+                xhr.upload.addEventListener("load", () => {
+                    updateProgress(100, "Upload complete, processing...");
+                    showStatus(`Processing ${file.name}...`, "loading");
+                });
+
+                // Server response received
                 xhr.addEventListener("load", () => {
-                    if (xhr.status === 200) {
-                        const data = JSON.parse(xhr.responseText);
-                        if (data.success) {
-                            showStatus(`Successfully uploaded ${file.name}!`, "success");
-                            fileInput.value = "";
-                            loadModels();
+                    setTimeout(() => {
+                        if (xhr.status === 200) {
+                            try {
+                                const data = JSON.parse(xhr.responseText);
+                                if (data.success) {
+                                    updateProgress(100, "Complete!");
+                                    showStatus(`Successfully uploaded ${file.name}!`, "success");
+                                    resetFileInput();
+                                    loadModels();
+                                } else {
+                                    showStatus(`Upload failed: ${data.error || "unknown error"}`, "error");
+                                }
+                            } catch (e) {
+                                showStatus("Failed to parse server response", "error");
+                            }
                         } else {
-                            showStatus(`Upload failed: ${data.error || "unknown error"}`, "error");
+                            showStatus(`Upload failed with status ${xhr.status}`, "error");
                         }
-                    } else {
-                        showStatus(`Upload failed with status ${xhr.status}`, "error");
-                    }
-                    isUploading = false;
-                    showProgress(false);
+                        isUploading = false;
+                        setTimeout(() => showProgress(false), 1500);
+                    }, 300);
                 });
 
-                // Handle errors
                 xhr.addEventListener("error", () => {
-                    showStatus("Network error. Make sure the Node server is running.", "error");
+                    showStatus("Network error. Make sure the server is running and accessible.", "error");
                     isUploading = false;
+                    resetFileInput();
                     showProgress(false);
                 });
 
                 xhr.addEventListener("abort", () => {
                     showStatus("Upload cancelled", "error");
                     isUploading = false;
+                    resetFileInput();
+                    showProgress(false);
+                });
+
+                xhr.addEventListener("timeout", () => {
+                    showStatus("Upload timeout. File may be too large or connection is slow.", "error");
+                    isUploading = false;
+                    resetFileInput();
                     showProgress(false);
                 });
 
                 xhr.open("POST", `${API_URL}/upload`);
+                xhr.timeout = 120000; // 2 minutes timeout
                 xhr.send(formData);
 
             } catch (err) {
@@ -438,20 +646,37 @@
             }
         }
 
-        function updateProgress(percent) {
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function updateProgress(percent, message = null) {
             const fill = document.getElementById("progressFill");
             const text = document.getElementById("progressText");
-            fill.style.width = percent + "%";
-            text.textContent = Math.round(percent) + "%";
+            const clampedPercent = Math.min(100, Math.max(0, percent));
+
+            fill.style.width = clampedPercent + "%";
+
+            if (message) {
+                text.textContent = `${Math.round(clampedPercent)}% - ${message}`;
+            } else {
+                text.textContent = Math.round(clampedPercent) + "%";
+            }
         }
 
         function showProgress(show) {
             const container = document.getElementById("progressContainer");
             if (show) {
                 container.classList.add("show");
-                updateProgress(0);
+                updateProgress(0, "Starting upload...");
             } else {
-                container.classList.remove("show");
+                setTimeout(() => {
+                    container.classList.remove("show");
+                }, 300);
             }
         }
 
@@ -477,7 +702,10 @@
                 }
             } catch (err) {
                 console.error(err);
-                showStatus("Cannot connect to server. Is it running on port 3000?", "error");
+                if (!showRefreshStatus) {
+                    return;
+                }
+                showStatus("Cannot connect to server. Check the server IP address.", "error");
             }
         }
 
@@ -486,30 +714,30 @@
 
             if (models.length === 0) {
                 container.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1/-1;">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                            </svg>
-                            <h3>No models yet</h3>
-                            <p>Upload your first 3D model to get started</p>
-                        </div>
-                    `;
+                            <div class="empty-state" style="grid-column: 1/-1;">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                </svg>
+                                <h3>No models yet</h3>
+                                <p>Upload your first 3D model to get started</p>
+                            </div>
+                        `;
                 return;
             }
 
             container.innerHTML = models.map(model => `
-                    <div class="model-card">
-                        <div class="model-name">${model.name}</div>
-                        <div class="model-info">Size: ${formatSize(model.size)}</div>
-                        <div class="model-info">Uploaded: ${formatDate(model.uploadDate)}</div>
-                        <div class="model-url">${model.url}</div>
-                        <div class="model-actions">
-                            <button onclick="copyUrl('${model.url}')">Copy URL</button>
-                            <button class="danger" onclick="deleteModel('${model.id}', '${model.name}')">Delete</button>
+                        <div class="model-card">
+                            <div class="model-name">${model.name}</div>
+                            <div class="model-info">Size: ${formatSize(model.size)}</div>
+                            <div class="model-info">Uploaded: ${formatDate(model.uploadDate)}</div>
+                            <div class="model-url">${model.url}</div>
+                            <div class="model-actions">
+                                <button onclick="copyUrl('${model.url}')">Copy URL</button>
+                                <button class="danger" onclick="deleteModel('${model.id}', '${model.name}')">Delete</button>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
         }
 
         function formatSize(bytes) {
