@@ -408,7 +408,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Login Screen -->
         <div class="login-screen" id="loginScreen">
             <div class="card">
                 <h1>AR Model Manager <span class="info-badge">MEGA Direct</span></h1>
@@ -439,7 +438,6 @@
             </div>
         </div>
 
-        <!-- Dashboard (hidden until logged in) -->
         <div class="dashboard" id="dashboard">
             <div class="card">
                 <h1>AR Model Manager <span class="info-badge">MEGA Direct</span></h1>
@@ -485,11 +483,9 @@
         </div>
     </div>
 
-    <!-- Load MEGA SDK from CDN -->
     <script src="https://unpkg.com/megajs@1.2.1/dist/main.browser-umd.js"></script>
 
     <script>
-        // Polyfill for fetch to prevent "Illegal invocation" error
         (function () {
             const nativeFetch = window.fetch;
             window.fetch = function (...args) {
@@ -501,7 +497,6 @@
         let arModelsFolder = null;
         let isUploading = false;
 
-        // Check if MEGA SDK loaded
         window.addEventListener('DOMContentLoaded', () => {
             console.log('Page loaded');
             console.log('MEGA SDK available:', typeof mega !== 'undefined');
@@ -532,7 +527,6 @@
                 return;
             }
 
-            // Check if MEGA SDK is available
             if (typeof mega === 'undefined') {
                 showLoginStatus('MEGA SDK not loaded. Please refresh the page.', 'error');
                 return;
@@ -547,7 +541,6 @@
             try {
                 console.log('Attempting login...');
 
-                // Create MEGA storage instance
                 const { Storage } = mega;
 
                 megaStorage = new Storage({
@@ -556,23 +549,19 @@
                     keepalive: false
                 });
 
-                // Wait for connection
                 await megaStorage.ready;
                 console.log('Connected to MEGA!');
 
-                // Load the file structure - THIS IS THE FIX
                 console.log('Loading file structure...');
                 showLoginStatus('Loading file structure...', 'loading');
                 await megaStorage.reload();
 
-                // Check if root and children exist
                 if (!megaStorage.root || !megaStorage.root.children) {
                     throw new Error('Failed to load MEGA file structure');
                 }
 
                 console.log('File structure loaded. Found', megaStorage.root.children.length, 'items in root');
 
-                // Find or create AR_Models folder
                 arModelsFolder = megaStorage.root.children.find(
                     f => f.name === 'AR_Models' && f.directory
                 );
@@ -584,11 +573,9 @@
                     console.log('Folder created!');
                 }
 
-                // Save credentials
                 localStorage.setItem('megaEmail', email);
                 localStorage.setItem('megaPassword', password);
 
-                // Show dashboard
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('dashboard').classList.add('active');
                 document.getElementById('userEmail').textContent = email;
@@ -597,7 +584,6 @@
                     showStatus('Successfully connected to MEGA!', 'success');
                 }
 
-                // Load models
                 await loadModels();
 
             } catch (error) {
@@ -688,23 +674,19 @@
             try {
                 console.log('Starting upload:', file.name);
 
-                // Read file as array buffer
                 const arrayBuffer = await file.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
 
-                // Upload to MEGA
                 const uploadStream = arModelsFolder.upload({
                     name: file.name,
                     size: file.size
                 }, uint8Array);
 
-                // Track progress
                 uploadStream.on('progress', (stats) => {
                     const percent = (stats.bytesLoaded / stats.bytesTotal) * 100;
                     updateProgress(percent, `${formatBytes(stats.bytesLoaded)} / ${formatBytes(stats.bytesTotal)}`);
                 });
 
-                // Wait for upload to complete
                 await new Promise((resolve, reject) => {
                     uploadStream.on('complete', resolve);
                     uploadStream.on('error', reject);
@@ -714,8 +696,8 @@
                 updateProgress(100, 'Upload complete!');
                 showStatus(`Successfully uploaded ${file.name}!`, 'success');
 
-                // Reload models list
                 await loadModels();
+                await updateModelsJSON();
 
                 setTimeout(() => showProgress(false), 1500);
 
@@ -740,10 +722,8 @@
 
             try {
                 console.log('Reloading folder...');
-                // Reload the entire storage to get latest files
                 await megaStorage.reload();
 
-                // Re-find the AR_Models folder after reload
                 arModelsFolder = megaStorage.root.children.find(
                     f => f.name === 'AR_Models' && f.directory
                 );
@@ -774,20 +754,93 @@
             }
         }
 
+        async function updateModelsJSON() {
+            if (!megaStorage || !arModelsFolder) {
+                console.log('Cannot update models.json - not connected');
+                return;
+            }
+
+            try {
+                console.log('Updating models.json...');
+                showStatus('Updating model list...', 'loading');
+
+                await megaStorage.reload();
+
+                arModelsFolder = megaStorage.root.children.find(
+                    f => f.name === 'AR_Models' && f.directory
+                );
+
+                const models = arModelsFolder.children ? arModelsFolder.children.filter(
+                    f => !f.directory && (f.name.endsWith('.glb') || f.name.endsWith('.gltf'))
+                ) : [];
+
+                const modelsData = await Promise.all(models.map(async (model) => {
+                    try {
+                        const link = await model.link();
+                        return {
+                            id: model.nodeId,
+                            name: model.name,
+                            url: link,
+                            size: model.size,
+                            uploadDate: new Date(model.timestamp * 1000).toISOString()
+                        };
+                    } catch (error) {
+                        console.error(`Failed to get link for ${model.name}:`, error);
+                        return null;
+                    }
+                }));
+
+                const validModels = modelsData.filter(m => m !== null);
+
+                const jsonContent = {
+                    success: true,
+                    count: validModels.length,
+                    lastUpdated: new Date().toISOString(),
+                    models: validModels
+                };
+
+                const jsonString = JSON.stringify(jsonContent, null, 2);
+                const jsonBytes = new TextEncoder().encode(jsonString);
+
+                const existingJson = arModelsFolder.children.find(f => f.name === 'models.json');
+                if (existingJson) {
+                    await existingJson.delete();
+                    console.log('Deleted old models.json');
+                }
+
+                const uploadStream = arModelsFolder.upload({
+                    name: 'models.json',
+                    size: jsonBytes.length
+                }, jsonBytes);
+
+                await new Promise((resolve, reject) => {
+                    uploadStream.on('complete', resolve);
+                    uploadStream.on('error', reject);
+                });
+
+                console.log('models.json updated successfully!');
+                showStatus('Model list updated!', 'success');
+
+            } catch (error) {
+                console.error('Failed to update models.json:', error);
+                showStatus('Warning: Model list update failed', 'error');
+            }
+        }
+
         async function displayModels(models) {
             const container = document.getElementById('modelsContainer');
 
             if (models.length === 0) {
                 container.innerHTML = `
-                        <div class="empty-state">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                            </svg>
-                            <h3>No models yet</h3>
-                            <p>Upload your first 3D model to get started</p>
-                        </div>
-                    `;
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                        </svg>
+                        <h3>No models yet</h3>
+                        <p>Upload your first 3D model to get started</p>
+                    </div>
+                `;
                 return;
             }
 
@@ -795,30 +848,30 @@
                 try {
                     const link = await model.link();
                     return `
-                            <div class="model-card">
-                                <div class="model-name">${escapeHtml(model.name)}</div>
-                                <div class="model-info">Size: ${formatBytes(model.size)}</div>
-                                <div class="model-info">ID: ${model.nodeId}</div>
-                                <div class="model-link">${link}</div>
-                                <div class="model-actions">
-                                    <button onclick="copyLink('${link}', '${model.nodeId}')">Copy Info</button>
-                                    <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
-                                </div>
+                        <div class="model-card">
+                            <div class="model-name">${escapeHtml(model.name)}</div>
+                            <div class="model-info">Size: ${formatBytes(model.size)}</div>
+                            <div class="model-info">ID: ${model.nodeId}</div>
+                            <div class="model-link">${link}</div>
+                            <div class="model-actions">
+                                <button onclick="copyLink('${link}', '${model.nodeId}')">Copy Info</button>
+                                <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
                             </div>
-                        `;
+                        </div>
+                    `;
                 } catch (error) {
                     console.error(`Failed to get link for ${model.name}:`, error);
                     return `
-                            <div class="model-card">
-                                <div class="model-name">${escapeHtml(model.name)}</div>
-                                <div class="model-info">Size: ${formatBytes(model.size)}</div>
-                                <div class="model-info">ID: ${model.nodeId}</div>
-                                <div class="model-link">Error getting link</div>
-                                <div class="model-actions">
-                                    <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
-                                </div>
+                        <div class="model-card">
+                            <div class="model-name">${escapeHtml(model.name)}</div>
+                            <div class="model-info">Size: ${formatBytes(model.size)}</div>
+                            <div class="model-info">ID: ${model.nodeId}</div>
+                            <div class="model-link">Error getting link</div>
+                            <div class="model-actions">
+                                <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
                             </div>
-                        `;
+                        </div>
+                    `;
                 }
             }));
 
@@ -842,6 +895,7 @@
                 await file.delete();
                 showStatus(`${name} deleted successfully`, 'success');
                 await loadModels();
+                await updateModelsJSON();
 
             } catch (error) {
                 console.error('Delete error:', error);
