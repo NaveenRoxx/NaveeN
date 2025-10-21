@@ -554,23 +554,67 @@
 
                 console.log('Loading file structure...');
                 showLoginStatus('Loading file structure...', 'loading');
-                await megaStorage.reload();
 
-                if (!megaStorage.root || !megaStorage.root.children) {
-                    throw new Error('Failed to load MEGA file structure');
+                // Try to load the file structure
+                try {
+                    await megaStorage.reload();
+                    console.log('Reload completed');
+                } catch (reloadError) {
+                    console.log('Reload error (continuing):', reloadError);
                 }
 
-                console.log('File structure loaded. Found', megaStorage.root.children.length, 'items in root');
+                // Wait for root to be ready with retry logic
+                let retries = 0;
+                while (!megaStorage.root && retries < 15) {
+                    console.log('Waiting for root... attempt', retries + 1);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    // Try reloading again
+                    if (retries % 3 === 0) {
+                        try {
+                            await megaStorage.reload();
+                        } catch (e) {
+                            console.log('Retry reload error:', e);
+                        }
+                    }
+
+                    retries++;
+                }
+
+                if (!megaStorage.root) {
+                    throw new Error('Failed to load MEGA root folder. Please refresh the page and try again.');
+                }
+
+                console.log('Root folder loaded');
+
+                // Initialize children array if it doesn't exist
+                if (!megaStorage.root.children) {
+                    megaStorage.root.children = [];
+                }
+
+                console.log('Found', megaStorage.root.children.length, 'items in root');
 
                 arModelsFolder = megaStorage.root.children.find(
                     f => f.name === 'AR_Models' && f.directory
                 );
 
                 if (!arModelsFolder) {
-                    console.log('Creating AR_Models folder...');
+                    console.log('AR_Models folder not found. Creating it...');
                     showLoginStatus('Creating AR_Models folder...', 'loading');
-                    arModelsFolder = await megaStorage.root.mkdir('AR_Models');
-                    console.log('Folder created!');
+                    try {
+                        arModelsFolder = await megaStorage.root.mkdir('AR_Models');
+                        console.log('AR_Models folder created successfully!');
+                        await megaStorage.reload();
+                        arModelsFolder = megaStorage.root.children.find(
+                            f => f.name === 'AR_Models' && f.directory
+                        );
+                        if (!arModelsFolder) {
+                            throw new Error('Failed to create AR_Models folder');
+                        }
+                    } catch (mkdirError) {
+                        console.error('Error creating folder:', mkdirError);
+                        throw new Error(`Failed to create AR_Models folder: ${mkdirError.message}`);
+                    }
                 }
 
                 localStorage.setItem('megaEmail', email);
@@ -832,15 +876,15 @@
 
             if (models.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                        </svg>
-                        <h3>No models yet</h3>
-                        <p>Upload your first 3D model to get started</p>
-                    </div>
-                `;
+                        <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                            </svg>
+                            <h3>No models yet</h3>
+                            <p>Upload your first 3D model to get started</p>
+                        </div>
+                    `;
                 return;
             }
 
@@ -848,30 +892,30 @@
                 try {
                     const link = await model.link();
                     return `
-                        <div class="model-card">
-                            <div class="model-name">${escapeHtml(model.name)}</div>
-                            <div class="model-info">Size: ${formatBytes(model.size)}</div>
-                            <div class="model-info">ID: ${model.nodeId}</div>
-                            <div class="model-link">${link}</div>
-                            <div class="model-actions">
-                                <button onclick="copyLink('${link}', '${model.nodeId}')">Copy Info</button>
-                                <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
+                            <div class="model-card">
+                                <div class="model-name">${escapeHtml(model.name)}</div>
+                                <div class="model-info">Size: ${formatBytes(model.size)}</div>
+                                <div class="model-info">ID: ${model.nodeId}</div>
+                                <div class="model-link">${link}</div>
+                                <div class="model-actions">
+                                    <button onclick="copyLink('${link}', '${model.nodeId}')">Copy Info</button>
+                                    <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
                 } catch (error) {
                     console.error(`Failed to get link for ${model.name}:`, error);
                     return `
-                        <div class="model-card">
-                            <div class="model-name">${escapeHtml(model.name)}</div>
-                            <div class="model-info">Size: ${formatBytes(model.size)}</div>
-                            <div class="model-info">ID: ${model.nodeId}</div>
-                            <div class="model-link">Error getting link</div>
-                            <div class="model-actions">
-                                <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
+                            <div class="model-card">
+                                <div class="model-name">${escapeHtml(model.name)}</div>
+                                <div class="model-info">Size: ${formatBytes(model.size)}</div>
+                                <div class="model-info">ID: ${model.nodeId}</div>
+                                <div class="model-link">Error getting link</div>
+                                <div class="model-actions">
+                                    <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
                 }
             }));
 
