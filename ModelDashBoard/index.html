@@ -486,23 +486,18 @@
     <script src="https://unpkg.com/megajs@1.2.1/dist/main.browser-umd.js"></script>
 
     <script>
-        (function () {
-            const nativeFetch = window.fetch;
-            window.fetch = function (...args) {
-                return nativeFetch.apply(window, args);
-            };
-        })();
-
         let megaStorage = null;
         let arModelsFolder = null;
         let isUploading = false;
+        let linkCache = new Map();
+        let lastReloadTime = 0;
+        const RELOAD_THROTTLE = 5000;
 
         window.addEventListener('DOMContentLoaded', () => {
-            console.log('Page loaded');
-            console.log('MEGA SDK available:', typeof mega !== 'undefined');
+            console.log('Page loaded - optimized version');
 
             if (typeof mega === 'undefined') {
-                showLoginStatus('Failed to load MEGA SDK. Please refresh the page.', 'error');
+                showLoginStatus('Failed to load MEGA SDK. Please refresh.', 'error');
                 return;
             }
 
@@ -527,93 +522,60 @@
                 return;
             }
 
-            if (typeof mega === 'undefined') {
-                showLoginStatus('MEGA SDK not loaded. Please refresh the page.', 'error');
-                return;
-            }
-
             const loginBtn = document.getElementById('loginBtn');
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Connecting to MEGA...';
-
+            loginBtn.textContent = 'Connecting...';
             showLoginStatus('Connecting to MEGA...', 'loading');
 
             try {
                 console.log('Attempting login...');
 
-                const { Storage } = mega;
-
-                megaStorage = new Storage({
+                // FIX: Wrap fetch to preserve context
+                const storageOptions = {
                     email: email,
                     password: password,
-                    keepalive: false
-                });
+                    keepalive: false,
+                    fetch: (url, options) => fetch(url, options)
+                };
 
+                megaStorage = new mega.Storage(storageOptions);
                 await megaStorage.ready;
-                console.log('Connected to MEGA!');
 
-                console.log('Loading file structure...');
-                showLoginStatus('Loading file structure...', 'loading');
+                console.log('Connected!');
 
-                // Try to load the file structure
-                try {
-                    await megaStorage.reload();
-                    console.log('Reload completed');
-                } catch (reloadError) {
-                    console.log('Reload error (continuing):', reloadError);
-                }
-
-                // Wait for root to be ready with retry logic
                 let retries = 0;
-                while (!megaStorage.root && retries < 15) {
+                while (!megaStorage.root && retries < 10) {
                     console.log('Waiting for root... attempt', retries + 1);
                     await new Promise(resolve => setTimeout(resolve, 1000));
-
-                    // Try reloading again
-                    if (retries % 3 === 0) {
-                        try {
-                            await megaStorage.reload();
-                        } catch (e) {
-                            console.log('Retry reload error:', e);
-                        }
+                    try {
+                        await megaStorage.reload();
+                    } catch (e) {
+                        console.log('Reload error:', e);
                     }
-
                     retries++;
                 }
 
                 if (!megaStorage.root) {
-                    throw new Error('Failed to load MEGA root folder. Please refresh the page and try again.');
+                    throw new Error('Failed to load MEGA root folder');
                 }
 
-                console.log('Root folder loaded');
-
-                // Initialize children array if it doesn't exist
                 if (!megaStorage.root.children) {
                     megaStorage.root.children = [];
                 }
-
-                console.log('Found', megaStorage.root.children.length, 'items in root');
 
                 arModelsFolder = megaStorage.root.children.find(
                     f => f.name === 'AR_Models' && f.directory
                 );
 
                 if (!arModelsFolder) {
-                    console.log('AR_Models folder not found. Creating it...');
                     showLoginStatus('Creating AR_Models folder...', 'loading');
-                    try {
-                        arModelsFolder = await megaStorage.root.mkdir('AR_Models');
-                        console.log('AR_Models folder created successfully!');
-                        await megaStorage.reload();
-                        arModelsFolder = megaStorage.root.children.find(
-                            f => f.name === 'AR_Models' && f.directory
-                        );
-                        if (!arModelsFolder) {
-                            throw new Error('Failed to create AR_Models folder');
-                        }
-                    } catch (mkdirError) {
-                        console.error('Error creating folder:', mkdirError);
-                        throw new Error(`Failed to create AR_Models folder: ${mkdirError.message}`);
+                    arModelsFolder = await megaStorage.root.mkdir('AR_Models');
+                    await megaStorage.reload();
+                    arModelsFolder = megaStorage.root.children.find(
+                        f => f.name === 'AR_Models' && f.directory
+                    );
+                    if (!arModelsFolder) {
+                        throw new Error('Failed to create AR_Models folder');
                     }
                 }
 
@@ -625,16 +587,31 @@
                 document.getElementById('userEmail').textContent = email;
 
                 if (!isAutoLogin) {
-                    showStatus('Successfully connected to MEGA!', 'success');
+                    showStatus('Successfully connected!', 'success');
                 }
 
                 await loadModels();
 
             } catch (error) {
                 console.error('Login error:', error);
-                showLoginStatus(`Login failed: ${error.message || 'Invalid credentials'}`, 'error');
+                showLoginStatus(`Login failed: ${error.message}`, 'error');
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Sign In to MEGA';
+                megaStorage = null;
+            }
+        }
+
+        async function reloadStorage(force = false) {
+            const now = Date.now();
+            if (!force && (now - lastReloadTime) < RELOAD_THROTTLE) {
+                console.log('Reload throttled');
+                return;
+            }
+            try {
+                await megaStorage.reload();
+                lastReloadTime = now;
+            } catch (error) {
+                console.error('Reload error:', error);
             }
         }
 
@@ -643,6 +620,7 @@
             localStorage.removeItem('megaPassword');
             megaStorage = null;
             arModelsFolder = null;
+            linkCache.clear();
 
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('dashboard').classList.remove('active');
@@ -650,7 +628,7 @@
             document.getElementById('loginBtn').disabled = false;
             document.getElementById('loginBtn').textContent = 'Sign In to MEGA';
 
-            showLoginStatus('Logged out successfully', 'success');
+            showLoginStatus('Logged out', 'success');
         }
 
         function setupUploadHandlers() {
@@ -687,12 +665,12 @@
 
         function handleFileSelect(file) {
             if (!file.name.endsWith('.glb') && !file.name.endsWith('.gltf')) {
-                showStatus('Please select a valid GLB or GLTF file', 'error');
+                showStatus('Please select a GLB or GLTF file', 'error');
                 return;
             }
 
             if (file.size > 100 * 1024 * 1024) {
-                showStatus('File size exceeds 100MB limit', 'error');
+                showStatus('File size exceeds 100MB', 'error');
                 return;
             }
 
@@ -700,24 +678,14 @@
         }
 
         async function uploadToMega(file) {
-            if (isUploading) {
-                showStatus('Upload already in progress', 'error');
-                return;
-            }
-
-            if (!megaStorage || !arModelsFolder) {
-                showStatus('Not connected to MEGA', 'error');
-                return;
-            }
+            if (isUploading) return;
 
             isUploading = true;
             document.getElementById('uploadArea').classList.add('disabled');
             showProgress(true);
-            showStatus(`Uploading ${file.name} to MEGA...`, 'loading');
+            showStatus(`Uploading ${file.name}...`, 'loading');
 
             try {
-                console.log('Starting upload:', file.name);
-
                 const arrayBuffer = await file.arrayBuffer();
                 const uint8Array = new Uint8Array(arrayBuffer);
 
@@ -736,14 +704,14 @@
                     uploadStream.on('error', reject);
                 });
 
-                console.log('Upload complete!');
-                updateProgress(100, 'Upload complete!');
-                showStatus(`Successfully uploaded ${file.name}!`, 'success');
+                updateProgress(100, 'Complete!');
+                showStatus(`Uploaded ${file.name}!`, 'success');
 
+                await reloadStorage(true);
                 await loadModels();
                 await updateModelsJSON();
 
-                setTimeout(() => showProgress(false), 1500);
+                setTimeout(() => showProgress(false), 1000);
 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -758,31 +726,23 @@
 
         async function loadModels() {
             if (!megaStorage || !arModelsFolder) {
-                showStatus('Not connected to MEGA', 'error');
+                showStatus('Not connected', 'error');
                 return;
             }
 
             showStatus('Loading models...', 'loading');
 
             try {
-                console.log('Reloading folder...');
-                await megaStorage.reload();
+                await reloadStorage();
 
-                arModelsFolder = megaStorage.root.children.find(
+                arModelsFolder = megaStorage.root.children?.find(
                     f => f.name === 'AR_Models' && f.directory
                 );
 
-                if (!arModelsFolder) {
-                    console.log('AR_Models folder not found after reload');
-                    showStatus('AR_Models folder not found', 'error');
-                    return;
-                }
-
-                const models = arModelsFolder.children ? arModelsFolder.children.filter(
+                const models = arModelsFolder?.children?.filter(
                     f => !f.directory && (f.name.endsWith('.glb') || f.name.endsWith('.gltf'))
-                ) : [];
+                ) || [];
 
-                console.log('Found', models.length, 'models');
                 await displayModels(models);
                 document.getElementById('modelCount').textContent =
                     `${models.length} model${models.length !== 1 ? 's' : ''}`;
@@ -793,34 +753,29 @@
                 }, 2000);
 
             } catch (error) {
-                console.error('Load models error:', error);
-                showStatus(`Failed to load models: ${error.message}`, 'error');
+                console.error('Load error:', error);
+                showStatus(`Failed to load: ${error.message}`, 'error');
             }
         }
 
         async function updateModelsJSON() {
-            if (!megaStorage || !arModelsFolder) {
-                console.log('Cannot update models.json - not connected');
-                return;
-            }
+            if (!megaStorage || !arModelsFolder) return;
 
             try {
                 console.log('Updating models.json...');
-                showStatus('Updating model list...', 'loading');
 
-                await megaStorage.reload();
-
-                arModelsFolder = megaStorage.root.children.find(
-                    f => f.name === 'AR_Models' && f.directory
-                );
-
-                const models = arModelsFolder.children ? arModelsFolder.children.filter(
+                const models = arModelsFolder.children?.filter(
                     f => !f.directory && (f.name.endsWith('.glb') || f.name.endsWith('.gltf'))
-                ) : [];
+                ) || [];
 
                 const modelsData = await Promise.all(models.map(async (model) => {
                     try {
-                        const link = await model.link();
+                        let link = linkCache.get(model.nodeId);
+                        if (!link) {
+                            link = await model.link();
+                            linkCache.set(model.nodeId, link);
+                        }
+
                         return {
                             id: model.nodeId,
                             name: model.name,
@@ -829,7 +784,7 @@
                             uploadDate: new Date(model.timestamp * 1000).toISOString()
                         };
                     } catch (error) {
-                        console.error(`Failed to get link for ${model.name}:`, error);
+                        console.error(`Link error for ${model.name}:`, error);
                         return null;
                     }
                 }));
@@ -849,7 +804,6 @@
                 const existingJson = arModelsFolder.children.find(f => f.name === 'models.json');
                 if (existingJson) {
                     await existingJson.delete();
-                    console.log('Deleted old models.json');
                 }
 
                 const uploadStream = arModelsFolder.upload({
@@ -862,12 +816,10 @@
                     uploadStream.on('error', reject);
                 });
 
-                console.log('models.json updated successfully!');
-                showStatus('Model list updated!', 'success');
+                console.log('models.json updated!');
 
             } catch (error) {
-                console.error('Failed to update models.json:', error);
-                showStatus('Warning: Model list update failed', 'error');
+                console.error('Update models.json error:', error);
             }
         }
 
@@ -890,7 +842,12 @@
 
             const modelCards = await Promise.all(models.map(async (model) => {
                 try {
-                    const link = await model.link();
+                    let link = linkCache.get(model.nodeId);
+                    if (!link) {
+                        link = await model.link();
+                        linkCache.set(model.nodeId, link);
+                    }
+
                     return `
                             <div class="model-card">
                                 <div class="model-name">${escapeHtml(model.name)}</div>
@@ -904,12 +861,11 @@
                             </div>
                         `;
                 } catch (error) {
-                    console.error(`Failed to get link for ${model.name}:`, error);
+                    console.error(`Link error for ${model.name}:`, error);
                     return `
                             <div class="model-card">
                                 <div class="model-name">${escapeHtml(model.name)}</div>
                                 <div class="model-info">Size: ${formatBytes(model.size)}</div>
-                                <div class="model-info">ID: ${model.nodeId}</div>
                                 <div class="model-link">Error getting link</div>
                                 <div class="model-actions">
                                     <button class="danger" onclick="deleteModel('${model.nodeId}', '${escapeHtml(model.name)}')">Delete</button>
@@ -923,36 +879,35 @@
         }
 
         async function deleteModel(nodeId, name) {
-            if (!confirm(`Delete "${name}"?`)) {
-                return;
-            }
+            if (!confirm(`Delete "${name}"?`)) return;
 
             showStatus(`Deleting ${name}...`, 'loading');
 
             try {
                 const file = arModelsFolder.children.find(f => f.nodeId === nodeId);
-
-                if (!file) {
-                    throw new Error('File not found');
-                }
+                if (!file) throw new Error('File not found');
 
                 await file.delete();
-                showStatus(`${name} deleted successfully`, 'success');
+                linkCache.delete(nodeId);
+
+                showStatus(`${name} deleted`, 'success');
+
+                await reloadStorage(true);
                 await loadModels();
                 await updateModelsJSON();
 
             } catch (error) {
                 console.error('Delete error:', error);
-                showStatus(`Failed to delete: ${error.message}`, 'error');
+                showStatus(`Delete failed: ${error.message}`, 'error');
             }
         }
 
         function copyLink(link, nodeId) {
             const textToCopy = `MEGA Link: ${link}\nModel ID: ${nodeId}`;
             navigator.clipboard.writeText(textToCopy).then(() => {
-                showStatus('Link and ID copied to clipboard!', 'success');
+                showStatus('Copied to clipboard!', 'success');
             }).catch(() => {
-                showStatus('Failed to copy', 'error');
+                showStatus('Copy failed', 'error');
             });
         }
 
@@ -971,17 +926,15 @@
         function updateProgress(percent, message = null) {
             const fill = document.getElementById('progressFill');
             const text = document.getElementById('progressText');
-            const clampedPercent = Math.min(100, Math.max(0, percent));
-
-            fill.style.width = clampedPercent + '%';
-            text.textContent = message || `${Math.round(clampedPercent)}%`;
+            fill.style.width = Math.min(100, Math.max(0, percent)) + '%';
+            text.textContent = message || `${Math.round(percent)}%`;
         }
 
         function showProgress(show) {
             const container = document.getElementById('progressContainer');
             if (show) {
                 container.classList.add('show');
-                updateProgress(0, 'Starting upload...');
+                updateProgress(0, 'Starting...');
             } else {
                 setTimeout(() => container.classList.remove('show'), 300);
             }
@@ -992,8 +945,8 @@
             status.textContent = message;
             status.className = `status ${type} show`;
 
-            if (type === 'success' && !message.includes('copied')) {
-                setTimeout(() => status.classList.remove('show'), 4000);
+            if (type === 'success') {
+                setTimeout(() => status.classList.remove('show'), 3000);
             }
         }
 
