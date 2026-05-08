@@ -1,578 +1,1378 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Naveen | Portfolio</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VR Simulation Videos — Naveen Kumar S</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --neon-cyan: #00f5ff;
+            --neon-purple: #b400ff;
+            --neon-green: #00ff88;
+            --neon-orange: #ff6b00;
+            --deep-bg: #020818;
+            --panel-bg: rgba(5, 20, 50, 0.7);
+            --panel-border: rgba(0, 245, 255, 0.15);
+            --panel-border-glow: rgba(0, 245, 255, 0.4);
+            --text-primary: #e8f4ff;
+            --text-secondary: rgba(180, 210, 255, 0.7);
+            --text-dim: rgba(100, 150, 200, 0.5);
+        }
 
-    body {
-      font-family: 'Segoe UI', 'Arial', sans-serif;
-      background: #0a0a0a;
-      color: #ffffff;
-      overflow-x: hidden;
-      min-height: 100vh;
-    }
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    /* Animated background particles */
-    .background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0a0a0a 100%);
-    }
+        html {
+            scroll-behavior: smooth;
+        }
 
-    .particles {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--deep-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: none;
+            min-height: 100vh;
+        }
 
-    .particle {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: #00d4ff;
-      border-radius: 50%;
-      animation: float 20s infinite linear;
-      opacity: 0.6;
-    }
+        /* ── CUSTOM CURSOR ── */
+        .cursor {
+            position: fixed;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.1s ease;
+            mix-blend-mode: screen;
+            box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+        }
 
-    @keyframes float {
-      0% { transform: translateY(100vh) translateX(0px); opacity: 0; }
-      10% { opacity: 0.6; }
-      90% { opacity: 0.6; }
-      100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
-    }
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,245,255,0.4);
+            pointer-events: none;
+            z-index: 99998;
+            transition: transform 0.15s ease, width 0.2s, height 0.2s;
+        }
 
-    /* Header Section */
-    header {
-      background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(22, 33, 62, 0.95));
-      backdrop-filter: blur(20px);
-      border-bottom: 2px solid rgba(0, 212, 255, 0.3);
-      padding: 3rem 2rem;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
+        /* ── ANIMATED GRID BG ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+            animation: gridShift 20s linear infinite;
+        }
 
-    header::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(45deg, 
-        rgba(0, 212, 255, 0.05) 0%, 
-        rgba(148, 0, 211, 0.05) 50%, 
-        rgba(0, 212, 255, 0.05) 100%);
-      z-index: -1;
-    }
+        @keyframes gridShift {
+            0% {
+                background-position: 0 0;
+            }
 
-    header h1 {
-      font-size: clamp(2.5rem, 6vw, 4rem);
-      font-weight: 700;
-      background: linear-gradient(135deg, #00d4ff, #9400d3, #00d4ff);
-      background-size: 200% 200%;
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: gradient-shift 3s ease-in-out infinite;
-      margin-bottom: 1rem;
-      text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
-    }
+            100% {
+                background-position: 60px 60px;
+            }
+        }
 
-    @keyframes gradient-shift {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
+        /* ── PARTICLES ── */
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
 
-    header p {
-      font-size: clamp(1rem, 2.5vw, 1.4rem);
-      color: #00d4ff;
-      font-weight: 300;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      animation: glow 2s ease-in-out infinite alternate;
-    }
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            animation: float linear infinite;
+            opacity: 0;
+        }
 
-    @keyframes glow {
-      from { text-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff; }
-      to { text-shadow: 0 0 20px #00d4ff, 0 0 30px #00d4ff; }
-    }
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
 
-    /* Back Button */
-    .back-nav {
-      position: absolute;
-      top: 2rem;
-      left: 2rem;
-      z-index: 100;
-    }
+            10% {
+                opacity: 0.6;
+            }
 
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 20px;
-      background: rgba(26, 26, 46, 0.8);
-      border: 1px solid rgba(0, 212, 255, 0.3);
-      border-radius: 25px;
-      color: #00d4ff;
-      text-decoration: none;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-    }
+            90% {
+                opacity: 0.3;
+            }
 
-    .back-btn:hover {
-      background: rgba(0, 212, 255, 0.1);
-      border-color: rgba(0, 212, 255, 0.6);
-      transform: translateX(-5px);
-      box-shadow: 0 5px 15px rgba(0, 212, 255, 0.2);
-    }
+            100% {
+                transform: translateY(-10vh) translateX(30px);
+                opacity: 0;
+            }
+        }
 
-    /* Main Content */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 3rem 2rem;
-    }
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 0 40px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(2, 8, 24, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,245,255,0.1);
+        }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 2.5rem;
-      animation: fadeInUp 1s ease-out;
-    }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
 
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+        .nav-logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 900;
+            color: #000;
+            position: relative;
+            overflow: hidden;
+        }
 
-    /* Cards */
-    .card {
-      background: linear-gradient(145deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9));
-      border: 1px solid rgba(0, 212, 255, 0.2);
-      border-radius: 20px;
-      padding: 2rem;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.4s ease;
-      backdrop-filter: blur(15px);
-      display: flex;
-      flex-direction: column;
-      min-height: 400px;
-    }
+            .nav-logo-icon::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.3));
+                animation: shimmer 3s ease infinite;
+            }
 
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
-      transition: left 0.5s ease;
-      z-index: 1;
-    }
+        @keyframes shimmer {
+            0%,100% {
+                opacity: 0;
+            }
 
-    .card:hover::before {
-      left: 100%;
-    }
+            50% {
+                opacity: 1;
+            }
+        }
 
-    .card:hover {
-      transform: translateY(-10px) scale(1.02);
-      border-color: rgba(0, 212, 255, 0.6);
-      box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
-    }
+        .nav-logo-text {
+            font-family: 'Orbitron',sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+        }
 
-    /* Image Container */
-    .thumb-container {
-      width: 100%;
-      height: 180px;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(0, 212, 255, 0.2);
-      border-radius: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
+        .nav-logo-sub {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
 
-    .thumb-container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(45deg, 
-        rgba(0, 212, 255, 0.05), 
-        rgba(148, 0, 211, 0.05));
-      z-index: 1;
-    }
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
 
-    .card:hover .thumb-container {
-      border-color: rgba(0, 212, 255, 0.4);
-      box-shadow: 0 10px 25px rgba(0, 212, 255, 0.15);
-    }
+        .nav-count {
+            font-family: 'Orbitron',sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            border: 1px solid var(--panel-border);
+            padding: 5px 14px;
+            border-radius: 2px;
+            background: rgba(0,245,255,0.03);
+        }
 
-    .thumb-container img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: 10px;
-      position: relative;
-      z-index: 2;
-      transition: all 0.3s ease;
-    }
+            .nav-count span {
+                color: var(--neon-cyan);
+                font-size: 14px;
+                font-weight: 700;
+            }
 
-    .card:hover .thumb-container img {
-      transform: scale(1.05);
-    }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 4px;
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
 
-    /* Card Content */
-    .card h3 {
-      font-size: 1.4rem;
-      color: #ffffff;
-      margin-bottom: 1.5rem;
-      font-weight: 600;
-      position: relative;
-      z-index: 2;
-      flex-grow: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
+            .back-btn::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: var(--neon-cyan);
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: -1;
+            }
 
-    /* Launch Button */
-    .btn {
-      display: inline-block;
-      padding: 15px 30px;
-      background: linear-gradient(135deg, #00d4ff, #9400d3);
-      color: white;
-      text-decoration: none;
-      border-radius: 50px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
-      z-index: 2;
-      margin-top: auto;
-    }
+            .back-btn:hover {
+                color: #000;
+            }
 
-    .btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #9400d3, #00d4ff);
-      transition: left 0.3s ease;
-      z-index: -1;
-    }
+                .back-btn:hover::before {
+                    transform: translateX(0);
+                }
 
-    .btn:hover::before {
-      left: 0;
-    }
+        .back-arrow {
+            transition: transform 0.3s;
+        }
 
-    .btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5);
-    }
+        .back-btn:hover .back-arrow {
+            transform: translateX(-4px);
+        }
 
-    /* Footer */
-    footer {
-      background: rgba(10, 10, 10, 0.95);
-      border-top: 1px solid rgba(0, 212, 255, 0.2);
-      padding: 2rem;
-      text-align: center;
-      margin-top: 4rem;
-    }
+        /* ── PAGE HERO ── */
+        .page-hero {
+            padding: 140px 40px 80px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
 
-    footer p {
-      color: #b8c5d1;
-      font-size: 1rem;
-    }
+        .hero-orb {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(0,245,255,0.06), rgba(180,0,255,0.04) 50%, transparent 70%);
+            border: 1px solid rgba(0,245,255,0.06);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            animation: pulse 5s ease-in-out infinite;
+            pointer-events: none;
+        }
 
-    /* Loading Animation for Cards */
-    .card {
-      animation: cardSlideIn 0.6s ease-out forwards;
-      opacity: 0;
-      transform: translateY(50px);
-    }
+        @keyframes pulse {
+            0%,100% {
+                transform: translate(-50%,-50%) scale(1);
+                opacity: 0.5;
+            }
 
-    .card:nth-child(1) { animation-delay: 0.1s; }
-    .card:nth-child(2) { animation-delay: 0.2s; }
-    .card:nth-child(3) { animation-delay: 0.3s; }
-    .card:nth-child(4) { animation-delay: 0.4s; }
-    .card:nth-child(5) { animation-delay: 0.5s; }
-    .card:nth-child(6) { animation-delay: 0.6s; }
+            50% {
+                transform: translate(-50%,-50%) scale(1.05);
+                opacity: 1;
+            }
+        }
 
-    @keyframes cardSlideIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+        .page-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            border: 1px solid rgba(0,245,255,0.3);
+            border-radius: 2px;
+            font-family: 'Orbitron',sans-serif;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 2;
+            background: rgba(0,245,255,0.05);
+        }
 
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      header {
-        padding: 2rem 1rem;
-      }
-      
-      .back-nav {
-        position: relative;
-        top: auto;
-        left: auto;
-        margin-bottom: 1rem;
-      }
-      
-      .container {
-        padding: 2rem 1rem;
-      }
-      
-      .grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
-      
-      .card {
-        min-height: 350px;
-        padding: 1.5rem;
-      }
-      
-      .thumb-container {
-        height: 160px;
-      }
-    }
+            .page-badge::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                background: var(--neon-cyan);
+                border-radius: 50%;
+                animation: blink 1.5s ease infinite;
+                box-shadow: 0 0 8px var(--neon-cyan);
+            }
 
-    @media (max-width: 480px) {
-      .card {
-        min-height: 320px;
-      }
-      
-      .thumb-container {
-        height: 140px;
-      }
-    }
-  </style>
+        @keyframes blink {
+            0%,100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.2;
+            }
+        }
+
+        .page-hero h1 {
+            font-family: 'Orbitron',sans-serif;
+            font-size: clamp(26px,4.5vw,52px);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(135deg,#fff 0%,var(--neon-cyan) 50%,var(--neon-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-hero-sub {
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .page-hero-desc {
+            max-width: 600px;
+            margin: 0 auto 0;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ── MAIN CONTENT ── */
+        .main-content {
+            padding: 0 40px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 48px;
+            padding: 24px 28px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-label {
+            font-family: 'Orbitron',sans-serif;
+            font-size: 9px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-right: 4px;
+        }
+
+        .filter-btn {
+            padding: 7px 18px;
+            border: 1px solid var(--panel-border);
+            border-radius: 2px;
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            background: transparent;
+            cursor: none;
+            transition: all 0.25s;
+        }
+
+            .filter-btn:hover {
+                border-color: var(--neon-cyan);
+                color: var(--neon-cyan);
+                background: rgba(0,245,255,0.05);
+            }
+
+            .filter-btn.active {
+                background: var(--neon-cyan);
+                color: #000;
+                border-color: var(--neon-cyan);
+                box-shadow: 0 0 14px rgba(0,245,255,0.35);
+            }
+
+        /* ── VIDEO GRID ── */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 22px;
+        }
+
+        /* ── VIDEO CARD ── */
+        .vcard {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateY(28px);
+            animation: cardIn 0.5s ease-out forwards;
+        }
+
+            .vcard.hidden {
+                display: none;
+            }
+
+        @keyframes cardIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .vcard::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0,245,255,0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .vcard:hover {
+            border-color: var(--panel-border-glow);
+            transform: translateY(-6px);
+            box-shadow: 0 0 28px rgba(0,245,255,0.12), 0 16px 40px rgba(0,0,0,0.4);
+        }
+
+        /* Corner decorations */
+        .corner-tl, .corner-br {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-color: var(--neon-cyan);
+            border-style: solid;
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .corner-tl {
+            top: 8px;
+            left: 8px;
+            border-width: 1px 0 0 1px;
+        }
+
+        .corner-br {
+            bottom: 8px;
+            right: 8px;
+            border-width: 0 1px 1px 0;
+        }
+
+        /* Thumbnail */
+        .vcard-thumb {
+            width: 100%;
+            height: 190px;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+            .vcard-thumb::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(to bottom, transparent 60%, rgba(2,8,24,0.8));
+                z-index: 1;
+                pointer-events: none;
+            }
+
+            .vcard-thumb img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.4s ease;
+                display: block;
+            }
+
+        .vcard:hover .vcard-thumb img {
+            transform: scale(1.06);
+        }
+
+        /* Play overlay */
+        .play-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .vcard:hover .play-overlay {
+            opacity: 1;
+        }
+
+        .play-btn-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(0,245,255,0.15);
+            border: 2px solid var(--neon-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 24px rgba(0,245,255,0.4);
+            transition: transform 0.2s;
+        }
+
+        .vcard:hover .play-btn-icon {
+            transform: scale(1.1);
+        }
+
+        .play-btn-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--neon-cyan);
+            margin-left: 4px;
+        }
+
+        /* Card body */
+        .vcard-body {
+            padding: 20px 22px 22px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .vcard-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .vcard-num {
+            font-family: 'Orbitron',sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+        }
+
+        .vcard-category {
+            font-family: 'Orbitron',sans-serif;
+            font-size: 9px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 2px;
+            border: 1px solid;
+        }
+
+        .cat-safety {
+            color: var(--neon-orange);
+            border-color: rgba(255,107,0,0.35);
+            background: rgba(255,107,0,0.06);
+        }
+
+        .cat-defence {
+            color: var(--neon-purple);
+            border-color: rgba(180,0,255,0.35);
+            background: rgba(180,0,255,0.06);
+        }
+
+        .cat-industrial {
+            color: var(--neon-cyan);
+            border-color: rgba(0,245,255,0.25);
+            background: rgba(0,245,255,0.04);
+        }
+
+        .cat-construction {
+            color: var(--neon-green);
+            border-color: rgba(0,255,136,0.3);
+            background: rgba(0,255,136,0.04);
+        }
+
+        .cat-plumbing {
+            color: #ffcc00;
+            border-color: rgba(255,204,0,0.3);
+            background: rgba(255,204,0,0.04);
+        }
+
+        .vcard-title {
+            font-family: 'Rajdhani',sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 18px;
+            flex: 1;
+        }
+
+        .view-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            align-self: flex-start;
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 3px;
+            font-family: 'Orbitron',sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .view-btn::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: var(--neon-cyan);
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: -1;
+            }
+
+            .view-btn:hover {
+                color: #000;
+            }
+
+                .view-btn:hover::before {
+                    transform: translateX(0);
+                }
+
+            .view-btn svg {
+                width: 14px;
+                height: 14px;
+                flex-shrink: 0;
+            }
+
+        /* No results */
+        .no-results {
+            display: none;
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+            .no-results.show {
+                display: block;
+            }
+
+            .no-results p {
+                font-family: 'Orbitron',sans-serif;
+                font-size: 13px;
+                letter-spacing: 2px;
+                color: var(--text-dim);
+            }
+
+        /* ── SECTION DIVIDER ── */
+        .section-divider {
+            height: 1px;
+            margin: 0 40px 0;
+            background: linear-gradient(90deg,transparent,rgba(0,245,255,0.15),rgba(180,0,255,0.15),transparent);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+            .reveal.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        /* ── FOOTER ── */
+        footer {
+            background: rgba(0,0,0,0.6);
+            border-top: 1px solid var(--panel-border);
+            padding: 40px 40px 28px;
+            position: relative;
+            z-index: 1;
+            margin-top: 20px;
+        }
+
+        .footer-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-brand h3 {
+            font-family: 'Orbitron',sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            background: linear-gradient(135deg,#fff,var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .footer-brand p {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .footer-divider-v {
+            width: 1px;
+            height: 40px;
+            background: var(--panel-border);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .footer-links a {
+                font-family: 'Rajdhani',sans-serif;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 1.5px;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                text-decoration: none;
+                transition: color 0.3s;
+            }
+
+                .footer-links a:hover {
+                    color: var(--neon-cyan);
+                }
+
+        .footer-copy {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+            .footer-copy span {
+                color: var(--neon-cyan);
+            }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            nav {
+                padding: 0 20px;
+            }
+
+            .nav-count {
+                display: none;
+            }
+
+            .page-hero {
+                padding: 100px 20px 60px;
+            }
+
+            .main-content {
+                padding: 0 20px 60px;
+            }
+
+            .filter-bar {
+                padding: 16px;
+            }
+
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+
+            footer {
+                padding: 32px 20px 20px;
+            }
+
+            .footer-divider-v {
+                display: none;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- Animated Background -->
-  <div class="background">
+
+    <!-- CURSOR -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <!-- PARTICLES -->
     <div class="particles" id="particles"></div>
-  </div>
 
-  <!-- Back Navigation -->
-  <nav class="back-nav">
-    <a href="../index.html" class="back-btn">
-      ← Back to Home
-    </a>
-  </nav>
+    <!-- ── NAV ── -->
+    <nav id="mainNav">
+        <a href="../index.html" class="nav-logo">
+            <div class="nav-logo-icon">NK</div>
+            <div>
+                <div class="nav-logo-text">NAVEEN KUMAR S</div>
+                <div class="nav-logo-sub">Senior XR Developer</div>
+            </div>
+        </a>
+        <div class="nav-right">
+            <div class="nav-count"><span>14</span> Simulations</div>
+            <a href="../index.html" class="back-btn">
+                <span class="back-arrow">←</span> Back to Portfolio
+            </a>
+        </div>
+    </nav>
 
-  <!-- Header -->
-  <header>
-    <h1> VR SIMULATION VIDEOS</h1>
-    <p>Interactive VR Simulation Videos</p>
-  </header>
+    <!-- ── PAGE HERO ── -->
+    <div class="page-hero">
+        <div class="hero-orb"></div>
+        <div class="page-badge">XR Training · CTLVS IIT Kharagpur · Demo Reel</div>
+        <h1>VR SIMULATION VIDEOS</h1>
+        <div class="page-hero-sub">Interactive XR Training — Demo Showcase</div>
+        <p class="page-hero-desc">
+            A curated collection of immersive VR training simulations spanning safety protocols,
+            defence maintenance, industrial skills, construction, and vocational training —
+            built with Unity for enterprise deployment.
+        </p>
+    </div>
 
-  <!-- Main Content -->
-  <main class="container">
-      <section class="grid">
-          <!-- Welding Training -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/HotWorks.png" alt="Welding Activity and Safety Training">
-              </div>
-              <h3>Welding Activity and Safety Training</h3>
-              <a href="https://youtu.be/ZOmKVL9UVYM" class="btn" target="_blank">View Video</a>
-          </div>
+    <div class="section-divider"></div>
 
-          <!--RI of Rudder-->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/RI.png" alt="Removal and Installation of a Aircraft Rudder">
-              </div>
-              <h3>Removal and Installation of a Aircraft Rudder</h3>
-              <a href="https://youtu.be/kACPk10OwOw" class="btn" target="_blank">View Video</a>
-          </div>
+    <!-- ── MAIN CONTENT ── -->
+    <main class="main-content" style="padding-top:48px;">
+        <div class="container">
 
-          <!-- Threading Exercise in Plumbing -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Threading.png" alt="Threading Exercise in Plumbing">
-              </div>
-              <h3>Threading Exercise in Plumbing</h3>
-              <a href="https://youtu.be/WscA8FEHfWc" class="btn" target="_blank">View Video</a>
-          </div>
+            <!-- Filter Bar -->
+            <div class="filter-bar reveal">
+                <span class="filter-label">Filter :</span>
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="safety">Safety</button>
+                <button class="filter-btn" data-filter="defence">Defence</button>
+                <button class="filter-btn" data-filter="industrial">Industrial</button>
+                <button class="filter-btn" data-filter="construction">Construction</button>
+                <button class="filter-btn" data-filter="plumbing">Plumbing</button>
+            </div>
 
+            <!-- Video Grid -->
+            <div class="video-grid" id="videoGrid">
 
-          <!-- Aircraft Component Identification -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/CI.png" alt="Aircraft Component Identification">
-              </div>
-              <h3>Aircraft Component Identification</h3>
-              <a href="https://youtu.be/ZrP1qf8ct_4" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 01 -->
+                <div class="vcard" data-category="safety" style="animation-delay:0.05s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/HotWorks.png" alt="Welding Activity and Safety Training" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">01 / 14</span>
+                            <span class="vcard-category cat-safety">Safety</span>
+                        </div>
+                        <div class="vcard-title">Welding Activity and Safety Training</div>
+                        <a href="https://youtu.be/ZOmKVL9UVYM" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Welding Activity -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Welding.png" alt="Welding Activity Training">
-              </div>
-              <h3>Welding Activity Training</h3>
-              <a href="https://youtu.be/kOLmXeQ7HxM" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 02 -->
+                <div class="vcard" data-category="defence" style="animation-delay:0.10s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/RI.png" alt="Removal and Installation of a Aircraft Rudder" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">02 / 14</span>
+                            <span class="vcard-category cat-defence">Defence</span>
+                        </div>
+                        <div class="vcard-title">Removal and Installation of Aircraft Rudder</div>
+                        <a href="https://youtu.be/kACPk10OwOw" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
+                <!-- 03 -->
+                <div class="vcard" data-category="plumbing" style="animation-delay:0.15s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Threading.png" alt="Threading Exercise in Plumbing" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">03 / 14</span>
+                            <span class="vcard-category cat-plumbing">Plumbing</span>
+                        </div>
+                        <div class="vcard-title">Threading Exercise in Plumbing</div>
+                        <a href="https://youtu.be/WscA8FEHfWc" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
+                <!-- 04 -->
+                <div class="vcard" data-category="defence" style="animation-delay:0.20s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/CI.png" alt="Aircraft Component Identification" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">04 / 14</span>
+                            <span class="vcard-category cat-defence">Defence</span>
+                        </div>
+                        <div class="vcard-title">Aircraft Component Identification</div>
+                        <a href="https://youtu.be/ZrP1qf8ct_4" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Electrical Training -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Electrical.png" alt="Electrical Training">
-              </div>
-              <h3>Electrical Training</h3>
-              <a href="https://youtu.be/nCuzQXCYuuM" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 05 -->
+                <div class="vcard" data-category="industrial" style="animation-delay:0.25s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Welding.png" alt="Welding Activity Training" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">05 / 14</span>
+                            <span class="vcard-category cat-industrial">Industrial</span>
+                        </div>
+                        <div class="vcard-title">Welding Activity Training</div>
+                        <a href="https://youtu.be/kOLmXeQ7HxM" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Environmental Control Training -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/EC.png" alt="Environmental Control Training">
-              </div>
-              <h3>Environmental Control Training</h3>
-              <a href="https://youtu.be/y8V5CTVdfWs" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 06 -->
+                <div class="vcard" data-category="industrial" style="animation-delay:0.30s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Electrical.png" alt="Electrical Training" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">06 / 14</span>
+                            <span class="vcard-category cat-industrial">Industrial</span>
+                        </div>
+                        <div class="vcard-title">Electrical Training</div>
+                        <a href="https://youtu.be/nCuzQXCYuuM" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Nailing in Carpentry Training -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Nailing.png" alt="Nailing Process in Carpentry">
-              </div>
-              <h3>Nailing Process in Carpentry</h3>
-              <a href="https://youtu.be/x_PGGreE0X4" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 07 -->
+                <div class="vcard" data-category="industrial" style="animation-delay:0.35s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/EC.png" alt="Environmental Control Training" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">07 / 14</span>
+                            <span class="vcard-category cat-industrial">Industrial</span>
+                        </div>
+                        <div class="vcard-title">Environmental Control Training</div>
+                        <a href="https://youtu.be/y8V5CTVdfWs" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Pillar Assembly Measurement -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/PAM.png" alt="Pillar Assembly Measurement">
-              </div>
-              <h3>Pillar Assembly Measurement</h3>
-              <a href="https://youtu.be/9TloTHlIZZs" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 08 -->
+                <div class="vcard" data-category="construction" style="animation-delay:0.40s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Nailing.png" alt="Nailing Process in Carpentry" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">08 / 14</span>
+                            <span class="vcard-category cat-construction">Construction</span>
+                        </div>
+                        <div class="vcard-title">Nailing Process in Carpentry</div>
+                        <a href="https://youtu.be/x_PGGreE0X4" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Color Identification in Scaffolding -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Scaff.png" alt="Color Identification in Scaffolding">
-              </div>
-              <h3>Color Identification in Scaffolding</h3>
-              <a href="https://youtu.be/i1DkH5SvNDs" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 09 -->
+                <div class="vcard" data-category="construction" style="animation-delay:0.45s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/PAM.png" alt="Pillar Assembly Measurement" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">09 / 14</span>
+                            <span class="vcard-category cat-construction">Construction</span>
+                        </div>
+                        <div class="vcard-title">Pillar Assembly Measurement</div>
+                        <a href="https://youtu.be/9TloTHlIZZs" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
+                <!-- 10 -->
+                <div class="vcard" data-category="construction" style="animation-delay:0.50s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Scaff.png" alt="Color Identification in Scaffolding" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">10 / 14</span>
+                            <span class="vcard-category cat-construction">Construction</span>
+                        </div>
+                        <div class="vcard-title">Color Identification in Scaffolding</div>
+                        <a href="https://youtu.be/i1DkH5SvNDs" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
+                <!-- 11 -->
+                <div class="vcard" data-category="plumbing" style="animation-delay:0.55s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Tap.png" alt="Tap Identification in Plumbing" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">11 / 14</span>
+                            <span class="vcard-category cat-plumbing">Plumbing</span>
+                        </div>
+                        <div class="vcard-title">Tap Identification in Plumbing</div>
+                        <a href="https://youtu.be/6iG0n77yjVg" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Tap Identification in Plumbing -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Tap.png" alt="Tap Identification in Plumbing">
-              </div>
-              <h3>Tap Identification in Plumbing</h3>
-              <a href="https://youtu.be/6iG0n77yjVg" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 12 -->
+                <div class="vcard" data-category="construction" style="animation-delay:0.60s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Bricks.png" alt="Stacking of Bricks in Construction" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">12 / 14</span>
+                            <span class="vcard-category cat-construction">Construction</span>
+                        </div>
+                        <div class="vcard-title">Stacking of Bricks in Construction</div>
+                        <a href="https://youtu.be/NmrUFlQ0X4w" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
+                <!-- 13 -->
+                <div class="vcard" data-category="construction" style="animation-delay:0.65s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/Tiling.png" alt="Tiling in Construction" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">13 / 14</span>
+                            <span class="vcard-category cat-construction">Construction</span>
+                        </div>
+                        <div class="vcard-title">Tiling in Construction</div>
+                        <a href="https://youtu.be/VZOaNbL6X2I" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Stacking of Bricks in Construction -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Bricks.png" alt="Stacking of Bricks in Construction">
-              </div>
-              <h3>Stacking of Bricks in Construction</h3>
-              <a href="https://youtu.be/NmrUFlQ0X4w" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- 14 -->
+                <div class="vcard" data-category="construction" style="animation-delay:0.70s;">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="vcard-thumb">
+                        <img src="./icons/BB.png" alt="Bar Bending Training" loading="lazy" />
+                        <div class="play-overlay">
+                            <div class="play-btn-icon">
+                                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vcard-body">
+                        <div class="vcard-meta">
+                            <span class="vcard-num">14 / 14</span>
+                            <span class="vcard-category cat-construction">Construction</span>
+                        </div>
+                        <div class="vcard-title">Bar Bending Training</div>
+                        <a href="https://youtu.be/N3JhH2V0zdc" class="view-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            View Video
+                        </a>
+                    </div>
+                </div>
 
-          <!-- Tiling in Construction -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/Tiling.png" alt="Tiling in Construction">
-              </div>
-              <h3>Tiling in Construction</h3>
-              <a href="https://youtu.be/VZOaNbL6X2I" class="btn" target="_blank">View Video</a>
-          </div>
+                <!-- No results placeholder -->
+                <div class="no-results" id="noResults">
+                    <p>— No simulations found for this category —</p>
+                </div>
 
-          <!-- Bar Bending Training -->
-          <div class="card">
-              <div class="thumb-container">
-                  <img src="./icons/BB.png" alt="Bar Bending Training">
-              </div>
-              <h3>Bar Bending Training</h3>
-              <a href="https://youtu.be/N3JhH2V0zdc" class="btn" target="_blank">View Video</a>
-          </div>
+            </div><!-- /video-grid -->
+        </div>
+    </main>
 
+    <!-- ── FOOTER ── -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <h3>Naveen Kumar S</h3>
+                <p>Senior XR Developer · CTLVS, IIT Kharagpur</p>
+            </div>
+            <div class="footer-divider-v"></div>
+            <div class="footer-links">
+                <a href="../index.html">Portfolio Home</a>
+                <a href="../WebGL/index.html">WebGL Apps</a>
+                <a href="../WeldingSimulator/index.html">Welding Sim</a>
+            </div>
+            <div class="footer-divider-v"></div>
+            <div class="footer-copy">© 2025 Naveen Kumar S <span>·</span> All rights reserved</div>
+        </div>
+    </footer>
 
-      </section>
-  </main>
+    <!-- ── SCRIPTS ── -->
+    <script>
+        /* Custom cursor */
+        const cursor = document.getElementById('cursor');
+        const cursorRing = document.getElementById('cursorRing');
+        let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
 
-  <!-- Footer -->
-  <footer>
-    <p>© 2025 Naveen Kumar | Senior XR Developer</p>
-  </footer>
+        document.addEventListener('mousemove', e => {
+            mouseX = e.clientX; mouseY = e.clientY;
+            cursor.style.left = mouseX - 8 + 'px';
+            cursor.style.top = mouseY - 8 + 'px';
+        });
+        function animateRing() {
+            ringX += (mouseX - ringX - 20) * 0.12;
+            ringY += (mouseY - ringY - 20) * 0.12;
+            cursorRing.style.left = ringX + 'px';
+            cursorRing.style.top = ringY + 'px';
+            requestAnimationFrame(animateRing);
+        }
+        animateRing();
+        document.querySelectorAll('a,button,.vcard').forEach(el => {
+            el.addEventListener('mouseenter', () => { cursor.style.transform = 'scale(2)'; cursorRing.style.width = cursorRing.style.height = '60px'; });
+            el.addEventListener('mouseleave', () => { cursor.style.transform = 'scale(1)'; cursorRing.style.width = cursorRing.style.height = '40px'; });
+        });
 
-  <script>
-    // Create floating particles
-    function createParticles() {
-      const particlesContainer = document.getElementById('particles');
-      const particleCount = 30; // Fewer particles for better performance on this page
-      
-      for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 20 + 's';
-        particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
-        particlesContainer.appendChild(particle);
-      }
-    }
+        /* Particles */
+        const pCont = document.getElementById('particles');
+        for (let i = 0; i < 45; i++) {
+            const p = document.createElement('div'); p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (8 + Math.random() * 12) + 's';
+            p.style.animationDelay = (Math.random() * 10) + 's';
+            p.style.width = p.style.height = (Math.random() > 0.7 ? 3 : 2) + 'px';
+            if (Math.random() > 0.6) p.style.background = 'rgba(180,0,255,0.6)';
+            if (Math.random() > 0.8) p.style.background = 'rgba(0,255,136,0.6)';
+            pCont.appendChild(p);
+        }
 
-    // Initialize particles when page loads
-    document.addEventListener('DOMContentLoaded', createParticles);
+        /* Scroll reveal */
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach((e, i) => {
+                if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80);
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-    // Add hover sound effect (optional)
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('mouseenter', () => {
-        // Optional: Add subtle hover sound or additional effects
-      });
-    });
+        /* Nav shadow */
+        window.addEventListener('scroll', () => {
+            document.getElementById('mainNav').style.boxShadow =
+                window.scrollY > 50 ? '0 4px 40px rgba(0,0,0,0.5)' : 'none';
+        });
 
-    // Smooth scroll to top when back button is clicked
-    document.querySelector('.back-btn').addEventListener('click', function(e) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  </script>
+        /* Category Filter */
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const cards = document.querySelectorAll('.vcard');
+        const noResults = document.getElementById('noResults');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filter = btn.dataset.filter;
+                let visible = 0;
+                cards.forEach((card, idx) => {
+                    const match = filter === 'all' || card.dataset.category === filter;
+                    if (match) {
+                        card.classList.remove('hidden');
+                        card.style.animationDelay = (idx * 0.04) + 's';
+                        card.style.animation = 'none';
+                        void card.offsetWidth;
+                        card.style.animation = 'cardIn 0.45s ease-out forwards';
+                        visible++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+                noResults.classList.toggle('show', visible === 0);
+            });
+        });
+    </script>
 </body>
 </html>
