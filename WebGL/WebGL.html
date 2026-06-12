@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebGL Simulations — Naveen Kumar S</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --neon-cyan: #00f5ff;
+            --neon-purple: #b400ff;
+            --neon-green: #00ff88;
+            --neon-orange: #ff6b00;
+            --deep-bg: #020818;
+            --panel-bg: rgba(5, 20, 50, 0.7);
+            --panel-border: rgba(0, 245, 255, 0.15);
+            --panel-border-glow: rgba(0, 245, 255, 0.4);
+            --text-primary: #e8f4ff;
+            --text-secondary: rgba(180, 210, 255, 0.7);
+            --text-dim: rgba(100, 150, 200, 0.5);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--deep-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: none;
+            min-height: 100vh;
+        }
+
+        /* ── CUSTOM CURSOR ── */
+        .cursor {
+            position: fixed;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.1s ease;
+            mix-blend-mode: screen;
+            box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,245,255,0.4);
+            pointer-events: none;
+            z-index: 99998;
+            transition: transform 0.15s ease, width 0.2s, height 0.2s;
+        }
+
+        /* ── ANIMATED GRID BG ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+            animation: gridShift 20s linear infinite;
+        }
+
+        @keyframes gridShift {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 60px 60px;
+            }
+        }
+
+        /* ── SCANLINE ── */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0,245,255,0.3), transparent);
+            z-index: 9997;
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% {
+                top: 0;
+            }
+
+            100% {
+                top: 100vh;
+            }
+        }
+
+        /* ── PARTICLES ── */
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            animation: float linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.6;
+            }
+
+            90% {
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: translateY(-10vh) translateX(30px);
+                opacity: 0;
+            }
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 0 40px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(2, 8, 24, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,245,255,0.1);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
+
+        .nav-logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 900;
+            color: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .nav-logo-icon::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.3));
+                animation: shimmer 3s ease infinite;
+            }
+
+        @keyframes shimmer {
+            0%, 100% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .nav-logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+        }
+
+        .nav-logo-sub {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-count {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            border: 1px solid var(--panel-border);
+            padding: 5px 14px;
+            border-radius: 2px;
+            background: rgba(0,245,255,0.03);
+        }
+
+            .nav-count span {
+                color: var(--neon-cyan);
+                font-size: 14px;
+                font-weight: 700;
+            }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .back-btn::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: var(--neon-cyan);
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: -1;
+            }
+
+            .back-btn:hover {
+                color: #000;
+            }
+
+                .back-btn:hover::before {
+                    transform: translateX(0);
+                }
+
+                .back-btn:hover .back-arrow {
+                    transform: translateX(-4px);
+                }
+
+        .back-arrow {
+            transition: transform 0.3s;
+        }
+
+        /* ── PAGE HERO ── */
+        .page-hero {
+            padding: 140px 40px 80px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .hero-orb {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(0,245,255,0.06), rgba(180,0,255,0.04) 50%, transparent 70%);
+            border: 1px solid rgba(0,245,255,0.06);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%,-50%) scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: translate(-50%,-50%) scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        .page-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            border: 1px solid rgba(0,245,255,0.3);
+            border-radius: 2px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 2;
+            background: rgba(0,245,255,0.05);
+        }
+
+            .page-badge::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                background: var(--neon-cyan);
+                border-radius: 50%;
+                animation: blink 1.5s ease infinite;
+                box-shadow: 0 0 8px var(--neon-cyan);
+            }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.2;
+            }
+        }
+
+        .page-hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(26px, 4.5vw, 52px);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(135deg, #fff 0%, var(--neon-cyan) 50%, var(--neon-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-hero-sub {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .page-hero-desc {
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ── SECTION DIVIDER ── */
+        .section-divider {
+            height: 1px;
+            margin: 0 40px;
+            background: linear-gradient(90deg, transparent, rgba(0,245,255,0.15), rgba(180,0,255,0.15), transparent);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── MAIN CONTENT ── */
+        .main-content {
+            padding: 60px 40px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* ── APPS GRID ── */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 22px;
+        }
+
+        /* ── APP CARD ── */
+        .acard {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateY(28px);
+            animation: cardIn 0.5s ease-out forwards;
+        }
+
+        @keyframes cardIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .acard::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0,245,255,0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .acard:hover {
+            border-color: var(--panel-border-glow);
+            transform: translateY(-6px);
+            box-shadow: 0 16px 40px rgba(0,245,255,0.12);
+        }
+
+        /* Corner decorations */
+        .corner-tl, .corner-br {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-color: var(--neon-cyan);
+            border-style: solid;
+            opacity: 0.5;
+            z-index: 3;
+        }
+
+        .corner-tl {
+            top: 8px;
+            left: 8px;
+            border-width: 1px 0 0 1px;
+        }
+
+        .corner-br {
+            bottom: 8px;
+            right: 8px;
+            border-width: 0 1px 1px 0;
+        }
+
+        /* Card thumbnail */
+        .acard-thumb {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+            .acard-thumb::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(to bottom, transparent 55%, rgba(2,8,24,0.85));
+                z-index: 1;
+                pointer-events: none;
+            }
+
+            .acard-thumb img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                padding: 12px;
+                transition: transform 0.4s ease;
+                display: block;
+            }
+
+        .acard:hover .acard-thumb img {
+            transform: scale(1.06);
+        }
+
+        /* Launch overlay */
+        .launch-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.3s;
+            background: rgba(0,245,255,0.04);
+        }
+
+        .acard:hover .launch-overlay {
+            opacity: 1;
+        }
+
+        .launch-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(0,245,255,0.12);
+            border: 2px solid var(--neon-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 24px rgba(0,245,255,0.4);
+            transition: transform 0.2s;
+            font-size: 20px;
+        }
+
+        .acard:hover .launch-icon {
+            transform: scale(1.1);
+        }
+
+        /* Card body */
+        .acard-body {
+            padding: 20px 22px 22px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .acard-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .acard-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+        }
+
+        .acard-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 2px;
+            border: 1px solid rgba(0,245,255,0.25);
+            color: var(--neon-cyan);
+            background: rgba(0,245,255,0.04);
+        }
+
+        .acard-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 20px;
+            flex: 1;
+            letter-spacing: 0.3px;
+        }
+
+        .launch-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            align-self: flex-start;
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 3px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .launch-btn::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: var(--neon-cyan);
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: -1;
+            }
+
+            .launch-btn:hover {
+                color: #000;
+            }
+
+                .launch-btn:hover::before {
+                    transform: translateX(0);
+                }
+
+            .launch-btn svg {
+                width: 13px;
+                height: 13px;
+                flex-shrink: 0;
+            }
+
+        /* Card stagger animation delays */
+        .acard:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .acard:nth-child(2) {
+            animation-delay: 0.10s;
+        }
+
+        .acard:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .acard:nth-child(4) {
+            animation-delay: 0.20s;
+        }
+
+        .acard:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .acard:nth-child(6) {
+            animation-delay: 0.30s;
+        }
+
+        .acard:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .acard:nth-child(8) {
+            animation-delay: 0.40s;
+        }
+
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+            .reveal.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        /* ── FOOTER ── */
+        footer {
+            background: rgba(0,0,0,0.6);
+            border-top: 1px solid var(--panel-border);
+            padding: 40px 40px 28px;
+            position: relative;
+            z-index: 1;
+            margin-top: 20px;
+        }
+
+        .footer-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-brand h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff, var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .footer-brand p {
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .footer-divider-v {
+            width: 1px;
+            height: 40px;
+            background: var(--panel-border);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .footer-links a {
+                font-family: 'Rajdhani', sans-serif;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 1.5px;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                text-decoration: none;
+                transition: color 0.3s;
+            }
+
+                .footer-links a:hover {
+                    color: var(--neon-cyan);
+                }
+
+        .footer-copy {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+            .footer-copy span {
+                color: var(--neon-cyan);
+            }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            nav {
+                padding: 0 20px;
+            }
+
+            .nav-count {
+                display: none;
+            }
+
+            .page-hero {
+                padding: 100px 20px 60px;
+            }
+
+            .main-content {
+                padding: 40px 20px 60px;
+            }
+
+            .section-divider {
+                margin: 0 20px;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            footer {
+                padding: 32px 20px 20px;
+            }
+
+            .footer-divider-v {
+                display: none;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SCANLINE -->
+    <div class="scanline"></div>
+
+    <!-- CUSTOM CURSOR -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <!-- PARTICLES -->
+    <div class="particles" id="particles"></div>
+
+    <!-- ── NAV ── -->
+    <nav id="mainNav">
+        <a href="../index.html" class="nav-logo">
+            <div class="nav-logo-icon">NK</div>
+            <div>
+                <div class="nav-logo-text">NAVEEN KUMAR S</div>
+                <div class="nav-logo-sub">Senior XR Developer</div>
+            </div>
+        </a>
+        <div class="nav-right">
+            <div class="nav-count"><span>8</span> Applications</div>
+            <a href="../index.html" class="back-btn">
+                <span class="back-arrow">←</span> Back to Portfolio
+            </a>
+        </div>
+    </nav>
+
+    <!-- ── PAGE HERO ── -->
+    <div class="page-hero">
+        <div class="hero-orb"></div>
+        <div class="page-badge">WebGL · CTLVS IIT Kharagpur · Interactive Apps</div>
+        <h1>WEBGL SIMULATIONS</h1>
+        <div class="page-hero-sub">Interactive Unity Projects — Directly In Your Browser</div>
+        <p class="page-hero-desc">
+            A collection of browser-based Unity WebGL applications spanning vocational training,
+            EV technology, construction, and industrial skills — built for the DIKSHA platform
+            and deployed across India's national education network.
+        </p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="main-content">
+        <div class="container">
+            <div class="apps-grid">
+
+                <!-- 01 - FirstAid -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/firstaid.png" alt="FirstAid CPR Training" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">01 / 08</span>
+                            <span class="acard-badge">Health & Safety</span>
+                        </div>
+                        <div class="acard-title">FirstAid — CPR Training</div>
+                        <a href="./WebGLBuilds/FirstAid/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 02 - EV 4 Wheeler -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/4W.png" alt="EV 4 Wheeler Components" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">02 / 08</span>
+                            <span class="acard-badge">EV Technology</span>
+                        </div>
+                        <div class="acard-title">EV 4 Wheeler — Components</div>
+                        <a href="./WebGLBuilds/EV 4W Components/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 03 - Travel & Tourism -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/travel.png" alt="Travel & Tourism Simulation" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">03 / 08</span>
+                            <span class="acard-badge">Vocational</span>
+                        </div>
+                        <div class="acard-title">Travel & Tourism</div>
+                        <a href="./WebGLBuilds/Travel&Tourism/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 04 - Solar 2D -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/solar.png" alt="Solar 2D Simulation" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">04 / 08</span>
+                            <span class="acard-badge">Energy</span>
+                        </div>
+                        <div class="acard-title">Solar 2D</div>
+                        <a href="./WebGLBuilds/Solar 2D/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 05 - Plumbing -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/plumbing.png" alt="Plumbing Simulation" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">05 / 08</span>
+                            <span class="acard-badge">Construction</span>
+                        </div>
+                        <div class="acard-title">Plumbing</div>
+                        <a href="./WebGLBuilds/Plumbing/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 06 - Fusion Splicing -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/splicing.png" alt="Fusion Splicing Simulation" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">06 / 08</span>
+                            <span class="acard-badge">Telecom</span>
+                        </div>
+                        <div class="acard-title">Fusion Splicing</div>
+                        <a href="./WebGLBuilds/FusionSplicing/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 07 - EV Two Wheeler Motor Repair -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/evrepair.png" alt="EV Two Wheeler Motor Repair" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">07 / 08</span>
+                            <span class="acard-badge">EV Technology</span>
+                        </div>
+                        <div class="acard-title">EV Two Wheeler — Motor Repair</div>
+                        <a href="./WebGLBuilds/EV_TwoWheeler_MotorRepair/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 08 - PLC Simulator -->
+                <div class="acard">
+                    <div class="corner-tl"></div>
+                    <div class="corner-br"></div>
+                    <div class="acard-thumb">
+                        <img src="./icons/plc.png" alt="PLC Simulator" loading="lazy" />
+                        <div class="launch-overlay">
+                            <div class="launch-icon">▶</div>
+                        </div>
+                    </div>
+                    <div class="acard-body">
+                        <div class="acard-meta">
+                            <span class="acard-num">08 / 08</span>
+                            <span class="acard-badge">Industrial</span>
+                        </div>
+                        <div class="acard-title">PLC Simulator</div>
+                        <a href="./WebGLBuilds/PLC/index.html" class="launch-btn" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 9V5l7 7-7 7v-4.1c-5 .5-8.5 2.7-11 6.1 1-5 4-9.8 11-10z" /></svg>
+                            Launch App
+                        </a>
+                    </div>
+                </div>
+
+            </div><!-- /apps-grid -->
+        </div>
+    </main>
+
+    <!-- ── FOOTER ── -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <h3>Naveen Kumar S</h3>
+                <p>Senior XR Developer · CTLVS, IIT Kharagpur</p>
+            </div>
+            <div class="footer-divider-v"></div>
+            <div class="footer-links">
+                <a href="../index.html">Portfolio Home</a>
+                <a href="../VR/index.html">VR Simulations</a>
+                <a href="../WeldingSimulator/index.html">Welding Sim</a>
+            </div>
+            <div class="footer-divider-v"></div>
+            <div class="footer-copy">© 2025 Naveen Kumar S <span>·</span> All rights reserved</div>
+        </div>
+    </footer>
+
+    <!-- ── SCRIPTS ── -->
+    <script>
+        /* Custom cursor */
+        const cursor = document.getElementById('cursor');
+        const cursorRing = document.getElementById('cursorRing');
+        let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+        document.addEventListener('mousemove', e => {
+            mouseX = e.clientX; mouseY = e.clientY;
+            cursor.style.left = mouseX - 8 + 'px';
+            cursor.style.top = mouseY - 8 + 'px';
+        });
+        function animateRing() {
+            ringX += (mouseX - ringX - 20) * 0.12;
+            ringY += (mouseY - ringY - 20) * 0.12;
+            cursorRing.style.left = ringX + 'px';
+            cursorRing.style.top = ringY + 'px';
+            requestAnimationFrame(animateRing);
+        }
+        animateRing();
+        document.querySelectorAll('a, button, .acard').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.style.transform = 'scale(2)';
+                cursorRing.style.width = cursorRing.style.height = '60px';
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.style.transform = 'scale(1)';
+                cursorRing.style.width = cursorRing.style.height = '40px';
+            });
+        });
+
+        /* Particles */
+        const pCont = document.getElementById('particles');
+        for (let i = 0; i < 45; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDuration = (8 + Math.random() * 12) + 's';
+            p.style.animationDelay = (Math.random() * 10) + 's';
+            p.style.width = p.style.height = (Math.random() > 0.7 ? 3 : 2) + 'px';
+            if (Math.random() > 0.6) p.style.background = 'rgba(180,0,255,0.6)';
+            if (Math.random() > 0.8) p.style.background = 'rgba(0,255,136,0.6)';
+            pCont.appendChild(p);
+        }
+
+        /* Scroll reveal */
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach((e, i) => {
+                if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 80);
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+        /* Nav shadow on scroll */
+        window.addEventListener('scroll', () => {
+            document.getElementById('mainNav').style.boxShadow =
+                window.scrollY > 50 ? '0 4px 40px rgba(0,0,0,0.5)' : 'none';
+        });
+    </script>
+</body>
+</html>
